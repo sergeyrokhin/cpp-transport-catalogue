@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace transport {
-	void Load(BusDepot& depot, std::istream& input);
+	void Load(BusDepot& depot, std::istream& input = std::cin);
     inline std::string_view LRstrip(std::string_view line);
 
     std::string_view Lstrip(std::string_view line);

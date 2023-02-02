@@ -5,20 +5,24 @@
 
 using namespace transport;
 
+//#define DEBUG
 
 int main() {
 	BusDepot depot;
-//    std::ifstream in("tsC_case0_input.txt"); // окрываем файл для чтения
-//    std::ifstream in("tsC_case1_input.txt"); // окрываем файл для чтения
-    //  std::ifstream in("tsC_test2_input.txt"); // окрываем файл для чтения
-    //if (in.is_open())
-    //{
-    //    Load(depot, in);
-    //    ReportBusDepot(depot);
-    //    Report(depot, in);
-    //}
-    //in.close();     // закрываем файл
-    Load(depot, std::cin);
-    Report(depot, std::cin);
+#ifdef DEBUG
+    std::ifstream in("tsC_case0_input.txt");
+    //  std::ifstream in("tsC_case1_input.txt");
+    //  std::ifstream in("tsC_test2_input.txt");
+    if (in.is_open())
+    {
+        Load(depot, in);
+        ReportBusDepot(depot, std::cout);
+        Report(depot, in, std::cout);
+    }
+    in.close();
+#else
+    Load(depot);
+    Report(depot);
+#endif // DEBUG
     return 0;
 }

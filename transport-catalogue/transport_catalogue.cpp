@@ -7,11 +7,11 @@ using namespace std;
 
 namespace transport {
 
-//******* Stop
+    //******* Stop
     void BusDepot::AddDistance(const Stop_Stop Stop_Stop, size_t distance) {
         all_distances_[Stop_Stop] = distance;
     }
-    
+
     Stop* BusDepot::FindStop(std::string_view name) {
         auto it_stop = ind_stops_.find(name);
         if (it_stop == ind_stops_.end())
@@ -33,10 +33,13 @@ namespace transport {
 
     Stop& BusDepot::GetStop(std::string_view name, double latitude, double longitude) {
         auto& stop = GetStop(name);
-        stop.geo_ = {latitude,longitude};
+        stop.geo_ = { latitude,longitude };
         return stop;
     }
-//**************
+    void BusDepot::SetStop(Stop& stop, double latitude, double longitude) {
+        stop.geo_ = { latitude,longitude };
+    }
+    //**************
     const StopIndex& BusDepot::GetStopIndex() { return ind_stops_; }
     const BusIndex& BusDepot::GetBusIndex() { return ind_buses_; }
     const Buses& BusDepot::GetAllBuses() { return all_buses_; }
@@ -62,13 +65,11 @@ namespace transport {
         }
         return *bus_ptr;
     }
-    void BusDepot::AddStep(Bus& bus, std::string_view stop_name_a, std::string_view stop_name_b, bool reversible) {
-        auto & stop_a = GetStop(stop_name_a);
-        auto & stop_b = GetStop(stop_name_b);
-        BusDepot::AddStep(bus, { &stop_a, &stop_b }, reversible);
+    void BusDepot::AddStep(Bus& bus, std::string_view stop_name) {
+        bus.bus_route_.push_back(&GetStop(stop_name));
     }
-    void BusDepot::AddStep(Bus& bus, Stop_Stop stop_stop, bool reversible) {
-        bus.bus_route_.push_back({ stop_stop, reversible });
+    void BusDepot::AddStep(Bus& bus, Stop* stop) {
+        bus.bus_route_.push_back(stop);
     }
     size_t BusDepot::GetFixDistance(Stop_Stop stop_stop) {
         auto it = all_distances_.find(stop_stop);

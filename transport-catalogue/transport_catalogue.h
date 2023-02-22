@@ -37,19 +37,15 @@ namespace transport {
 	struct Stop {
 		Stop(const std::string_view name) : name_(name.substr()) { geo_ = { 0, 0 }; }
 		std::string name_;
-		Coordinates geo_;
+		geo::Coordinates geo_;
 		bool operator==(const Stop& rh) { return name_ == rh.name_; }
-	};
-
-	struct Step {
-		Stop_Stop stop_stop;
-		bool reversible;
 	};
 
 	struct Bus {
 		Bus(const std::string_view name) : name_(name.substr()) {}
 		std::string name_;
-		std::deque<Step> bus_route_;
+		std::deque<Stop*> bus_route_;
+		bool roundtrip_;
 		bool operator==(const Bus& rh) { return name_ == rh.name_; }
 	};
 
@@ -60,10 +56,11 @@ namespace transport {
 		Stop* FindStop(std::string_view name);
 		Stop& GetStop(std::string_view name);
 		Stop& GetStop(std::string_view name, double latitude, double longitude);
+		void SetStop(Stop& stop, double latitude, double longitude);
 		Bus* FindBus(std::string_view name);
 		Bus& GetBus(std::string_view name);
-		void AddStep(Bus& bus, std::string_view stop_name_a, std::string_view stop_name_b, bool reversible);
-		void AddStep(Bus& bus, Stop_Stop stop_stop, bool reversible);
+		void AddStep(Bus& bus, std::string_view stop);
+		void AddStep(Bus& bus, Stop* stop);
 		size_t GetFixDistance(Stop_Stop stop_stop);
 		void AddDistance(const Stop_Stop stop_stop, size_t distance);
 		const BusIndex& GetBusIndex();
@@ -72,7 +69,7 @@ namespace transport {
 		const Stops& GetAllStops();
 		const Distances& GetDistances();
 
-	private:		
+	private:
 		std::deque<Stop> all_stops_;
 		std::deque<Bus> all_buses_;
 		StopIndex ind_stops_;

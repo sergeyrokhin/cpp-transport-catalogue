@@ -4,10 +4,10 @@
 
 using namespace std;
 
-inline const int RESERVE_FOR_VALUE = 20;
-inline const string NONE_TEXT = "null";
-inline const string TRUE_TEXT = "true";
-inline const string FALSE_TEXT = "false";
+static constexpr int RESERVE_FOR_VALUE = 20;
+static constexpr string_view NONE_TEXT = "null"sv;
+static constexpr string_view TRUE_TEXT = "true"sv;
+static constexpr string_view FALSE_TEXT = "false"sv;
 
 namespace json {
 
@@ -265,21 +265,13 @@ namespace json {
 	Node::Node(const string& value) : value_(value) {}
 
 	const Array& Node::AsArray() const {
-		try {
-			return get<Array>(value_);
-		}
-		catch (const bad_variant_access& e) {
-			throw std::logic_error("not Array"s);
-		}
+		if(holds_alternative<Array>(value_)) return get<Array>(value_);
+		throw std::logic_error("not Array"s);
 	}
 
 	const Dict& Node::AsMap() const {
-		try {
-			return get<Dict>(value_);
-		}
-		catch (const bad_variant_access& e) {
-			throw std::logic_error("not Dict"s);
-		}
+		if (holds_alternative<Dict>(value_)) return get<Dict>(value_);
+		throw std::logic_error("not Dict"s);
 	}
 
 	bool Node::AsBool() const {
@@ -419,7 +411,7 @@ namespace json {
 				// Внутри неё нужная функция PrintNode будет выбрана за счёт перегрузки функций.
 				auto next_context = PrintContext{ output };
 				PrintNode(next_context, value);
-				output << endl;
+				output << '\n';
 			}, doc.GetRoot().GetNodeValue());
 	}
 

@@ -5,16 +5,14 @@ namespace svg {
 	using namespace std::literals;
 
 
-	void Object::Render(const RenderContext& context) const {
+	void Object::MapRenderer(const RenderContext& context) const {
 		context.RenderIndent();
 
 		// Делегируем вывод тега своим подклассам
 		RenderObject(context);
 
-		context.out << std::endl;
+		context.out << '\n';
 	}
-
-
 
 	// ---------- Circle ------------------
 
@@ -137,13 +135,13 @@ namespace svg {
 		objects_ptr_.push_back(move(obj));
 	}
 
-	void Document::Render(const RenderContext& context) const {
-		context.out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"sv << std::endl;
-		context.out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">"sv << std::endl;
+	void Document::MapRenderer(const RenderContext& context) const {
+		context.out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"sv;
+		context.out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\\n"sv;
 
 		for (auto& obj : objects_ptr_) {
 			context.out << "  "sv;
-			obj.get()->Render(context);
+			obj.get()->MapRenderer(context);
 		}
 		context.out << "</svg>"sv;
 	}

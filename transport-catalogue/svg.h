@@ -5,7 +5,6 @@
 #include <memory>
 #include <string>
 #include <deque>
-#include <optional>
 #include <variant>
 
 namespace svg {
@@ -180,7 +179,7 @@ namespace svg {
 	 */
 	class Object {
 	public:
-		virtual void Render(const RenderContext& context) const;
+		virtual void MapRenderer(const RenderContext& context) const;
 
 		virtual ~Object() = default;
 
@@ -285,7 +284,7 @@ namespace svg {
 		void AddPtr(std::unique_ptr<Object>&& obj) override;
 
 		// Выводит в ostream svg-представление документа
-		void Render(const RenderContext& context) const;
+		void MapRenderer(const RenderContext& context) const;
 
 		// Прочие методы и данные, необходимые для реализации класса Document
 		std::deque<std::unique_ptr<Object>> objects_ptr_;

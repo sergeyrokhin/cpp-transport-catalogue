@@ -1,6 +1,4 @@
 #pragma once
-#include "geo.h"
-
 #include <string>
 #include <string_view>
 #include <deque>
@@ -8,7 +6,8 @@
 #include <unordered_set>
 #include <iostream>
 
-
+#include "geo.h"
+#include "domain.h"
 
 namespace transport {
 
@@ -21,10 +20,6 @@ namespace transport {
 		}
 	};
 
-	struct Stop;
-	struct Step;
-	struct Bus;
-
 	using StopIndex = std::unordered_map<std::string_view, Stop*>;
 	using BusIndex = std::unordered_map<std::string_view, Bus*>;
 	using Stops = std::deque<Stop>;
@@ -33,26 +28,9 @@ namespace transport {
 
 	using Distances = std::unordered_map<Stop_Stop, size_t, pair_hash>;
 
-
-	struct Stop {
-		Stop(const std::string_view name) : name_(name.substr()) { geo_ = { 0, 0 }; }
-		std::string name_;
-		geo::Coordinates geo_;
-		bool operator==(const Stop& rh) { return name_ == rh.name_; }
-	};
-
-	struct Bus {
-		Bus(const std::string_view name) : name_(name.substr()) {}
-		std::string name_;
-		std::deque<Stop*> bus_route_;
-		bool roundtrip_;
-		bool operator==(const Bus& rh) { return name_ == rh.name_; }
-	};
-
-	class BusDepot {
+	class TransportCatalogue {
 
 	public:
-		std::string_view GetWordView(std::string_view name);
 		Stop* FindStop(std::string_view name);
 		Stop& GetStop(std::string_view name);
 		Stop& GetStop(std::string_view name, double latitude, double longitude);
@@ -65,7 +43,7 @@ namespace transport {
 		void AddDistance(const Stop_Stop stop_stop, size_t distance);
 		const BusIndex& GetBusIndex();
 		const StopIndex& GetStopIndex();
-		const Buses& GetAllBuses();
+		const Buses& GetAllBuses() const;
 		const Stops& GetAllStops();
 		const Distances& GetDistances();
 

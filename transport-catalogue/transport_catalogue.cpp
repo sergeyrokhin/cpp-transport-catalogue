@@ -1,18 +1,18 @@
-#include "transport_catalogue.h"
-
 #include <algorithm>
 #include <iostream>
+
+#include "transport_catalogue.h"
 
 using namespace std;
 
 namespace transport {
 
     //******* Stop
-    void BusDepot::AddDistance(const Stop_Stop Stop_Stop, size_t distance) {
+    void TransportCatalogue::AddDistance(const Stop_Stop Stop_Stop, size_t distance) {
         all_distances_[Stop_Stop] = distance;
     }
 
-    Stop* BusDepot::FindStop(std::string_view name) {
+    Stop* TransportCatalogue::FindStop(std::string_view name) {
         auto it_stop = ind_stops_.find(name);
         if (it_stop == ind_stops_.end())
         {
@@ -21,7 +21,7 @@ namespace transport {
         return (*it_stop).second;
     }
 
-    Stop& BusDepot::GetStop(std::string_view name) {
+    Stop& TransportCatalogue::GetStop(std::string_view name) {
         auto stop_ptr = FindStop(name);
         if (stop_ptr == nullptr) {
             auto& new_stop = all_stops_.emplace_back(Stop{ name });
@@ -31,23 +31,23 @@ namespace transport {
         else return *stop_ptr;
     }
 
-    Stop& BusDepot::GetStop(std::string_view name, double latitude, double longitude) {
+    Stop& TransportCatalogue::GetStop(std::string_view name, double latitude, double longitude) {
         auto& stop = GetStop(name);
         stop.geo_ = { latitude,longitude };
         return stop;
     }
-    void BusDepot::SetStop(Stop& stop, double latitude, double longitude) {
+    void TransportCatalogue::SetStop(Stop& stop, double latitude, double longitude) {
         stop.geo_ = { latitude,longitude };
     }
     //**************
-    const StopIndex& BusDepot::GetStopIndex() { return ind_stops_; }
-    const BusIndex& BusDepot::GetBusIndex() { return ind_buses_; }
-    const Buses& BusDepot::GetAllBuses() { return all_buses_; }
-    const Stops& BusDepot::GetAllStops() { return all_stops_; }
-    const Distances& BusDepot::GetDistances() { return all_distances_; }
+    const StopIndex& TransportCatalogue::GetStopIndex() { return ind_stops_; }
+    const BusIndex& TransportCatalogue::GetBusIndex() { return ind_buses_; }
+    const Buses& TransportCatalogue::GetAllBuses() const { return all_buses_; }
+    const Stops& TransportCatalogue::GetAllStops() { return all_stops_; }
+    const Distances& TransportCatalogue::GetDistances() { return all_distances_; }
 
     //********* Bus
-    Bus* BusDepot::FindBus(std::string_view name) {
+    Bus* TransportCatalogue::FindBus(std::string_view name) {
         auto it = ind_buses_.find(name);
         if (it == ind_buses_.end())
         {
@@ -56,7 +56,7 @@ namespace transport {
         return (*it).second;
     }
 
-    Bus& BusDepot::GetBus(std::string_view name) {
+    Bus& TransportCatalogue::GetBus(std::string_view name) {
         auto bus_ptr = FindBus(name);
         if (bus_ptr == nullptr) {
             auto& new_bus = all_buses_.emplace_back(Bus{ name });
@@ -65,17 +65,21 @@ namespace transport {
         }
         return *bus_ptr;
     }
-    void BusDepot::AddStep(Bus& bus, std::string_view stop_name) {
+
+    void TransportCatalogue::AddStep(Bus& bus, std::string_view stop_name) {
         bus.bus_route_.push_back(&GetStop(stop_name));
     }
-    void BusDepot::AddStep(Bus& bus, Stop* stop) {
+
+    void TransportCatalogue::AddStep(Bus& bus, Stop* stop) {
         bus.bus_route_.push_back(stop);
     }
-    size_t BusDepot::GetFixDistance(Stop_Stop stop_stop) {
+
+    size_t TransportCatalogue::GetFixDistance(Stop_Stop stop_stop) {
         auto it = all_distances_.find(stop_stop);
         if (it != all_distances_.end()) return it->second;
         it = all_distances_.find({ stop_stop.second, stop_stop.first });
         if (it != all_distances_.end()) return it->second;
         return 0;
     }
-}
+
+} //namespace transport

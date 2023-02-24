@@ -21,17 +21,11 @@ namespace json {
     using Array = std::vector<Node>;
     using NodeValue = std::variant<std::nullptr_t, int, double, std::string, bool, Array, Dict>;
 
-    struct PrintContext;
-    void PrintNode(PrintContext& ctx, const Array& value);
-    void PrintNode(PrintContext& ctx, const Dict& value);
-
-
     // Эта ошибка должна выбрасываться при ошибках парсинга JSON
     class ParsingError : public std::runtime_error {
     public:
         using runtime_error::runtime_error;
     };
-
 
     // Контекст вывода, хранит ссылку на поток вывода и текущий отсуп
     struct PrintContext {
@@ -69,12 +63,9 @@ namespace json {
         Node() {}
         Node(const Array& array);
         Node(const Dict& map);
-        //Node(Array& array);
-        //Node(Dict& map);
         Node(const int value);
         Node(const double value);
         Node(const bool value);
-        //Node(std::string& value);
         Node(const std::string& value);
 
         int AsInt() const;
@@ -97,7 +88,6 @@ namespace json {
     class Document {
     public:
         explicit Document(const Node& root);
-        //explicit Document(Node& root);
 
         const Node& GetRoot() const;
         bool operator==(const Document& other) { return root_ == other.root_; }

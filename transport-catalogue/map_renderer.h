@@ -1,10 +1,10 @@
 #pragma once
+#include <vector>
+#include <optional>
+
 #include "svg.h"
 #include "geo.h"
 #include "json.h"
-#include "transport_catalogue.h"
-
-#include <vector>
 
 /*
  * В этом файле вы можете разместить код, отвечающий за визуализацию карты маршрутов в формате SVG.
@@ -12,7 +12,7 @@
  * Пока можете оставить файл пустым.
  */
 
-namespace render {
+namespace renderer {
 
     bool IsZero(double value);
 
@@ -85,13 +85,13 @@ namespace render {
         double zoom_coeff_ = 0;
     };
 
-    struct FontSet { size_t font_size = 20;  double offset_x = 0; double offset_y = 0; };
+    struct FontSet { size_t font_size = 20;  svg::Point offset = { 0, 0 }; };
 
-	class Render {
+	class MapRenderer {
 
 	public:
-        Render();
-        Render(const json::Document& doc);
+        MapRenderer();
+        MapRenderer(const json::Document& doc);
 
         double width_, height_;
         double padding_;
@@ -103,6 +103,4 @@ namespace render {
         std::vector<svg::Color> palette_;
 	};
 
-    svg::Document BusDepotMap(transport::BusDepot& depot, const Render& render);
-
-}
+} //namespace renderer

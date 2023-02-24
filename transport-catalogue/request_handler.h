@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 
 #include "transport_catalogue.h"
 
@@ -16,11 +17,14 @@
 // Класс RequestHandler играет роль Фасада, упрощающего взаимодействие JSON reader-а
 // с другими подсистемами приложения.
 // См. паттерн проектирования Фасад: https://ru.wikipedia.org/wiki/Фасад_(шаблон_проектирования)
-/*
+
+class BusStat : public transport::Bus {};
+using BusPtr = transport::Bus *;
+
 class RequestHandler {
 public:
     // MapRenderer понадобится в следующей части итогового проекта
-    RequestHandler(const TransportCatalogue& db, const renderer::MapRenderer& renderer);
+    RequestHandler(const transport::TransportCatalogue& db, const renderer::MapRenderer& renderer);
 
     // Возвращает информацию о маршруте (запрос Bus)
     std::optional<BusStat> GetBusStat(const std::string_view& bus_name) const;
@@ -33,13 +37,13 @@ public:
 
 private:
     // RequestHandler использует агрегацию объектов "Транспортный Справочник" и "Визуализатор Карты"
-    const TransportCatalogue& db_;
+    const transport::TransportCatalogue& db_;
     const renderer::MapRenderer& renderer_;
 };
-*/
+
 
 struct Length {
     double length, g_length;
 };
 
-Length DistCalculate(transport::BusDepot& depot, transport::Stop_Stop stop_stop, bool roundtrip = true);
+Length DistCalculate(transport::TransportCatalogue& depot, transport::Stop_Stop stop_stop, bool roundtrip = true);

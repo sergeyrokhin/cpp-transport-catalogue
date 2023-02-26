@@ -179,7 +179,7 @@ namespace svg {
 	 */
 	class Object {
 	public:
-		virtual void MapRenderer(const RenderContext& context) const;
+		virtual void MapRender(const RenderContext& context) const;
 
 		virtual ~Object() = default;
 
@@ -270,7 +270,8 @@ namespace svg {
 	struct Drawable {
 	public:
 		virtual void Draw(ObjectContainer& container) const = 0;
-		//protected:
+		
+	protected:
 		virtual ~Drawable() = default;
 	};
 
@@ -284,7 +285,7 @@ namespace svg {
 		void AddPtr(std::unique_ptr<Object>&& obj) override;
 
 		// Выводит в ostream svg-представление документа
-		void MapRenderer(const RenderContext& context) const;
+		void MapRender(const RenderContext& context) const;
 
 		// Прочие методы и данные, необходимые для реализации класса Document
 		std::deque<std::unique_ptr<Object>> objects_ptr_;

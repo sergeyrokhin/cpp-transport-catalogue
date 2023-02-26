@@ -8,7 +8,7 @@
 
 namespace json {
 
-    //inline std::string_view LRstrip(std::string_view line);
+
 
     std::string_view Lstrip(std::string_view line);
     std::string_view Rstrip(std::string_view line);
@@ -17,7 +17,7 @@ namespace json {
 
     class Node;
     // Сохраните объявления Dict и Array без изменения
-    using Dict = std::map<std::string, Node>;
+    using Dict = std::map<std::string, Node, std::less<>>;
     using Array = std::vector<Node>;
     using NodeValue = std::variant<std::nullptr_t, int, double, std::string, bool, Array, Dict>;
 
@@ -32,8 +32,8 @@ namespace json {
         std::ostream& out;
         int indent_step = 4;
         int indent = 0;
-
         void PrintIndent(int step = 0) const {
+            out.put('\n');
             for (int i = 0; i < indent + step; ++i) {
                 out.put(' ');
             }
@@ -109,7 +109,7 @@ namespace json {
     void PrintNode(std::ostream& output, const double& value);
     void PrintNode(std::ostream& output, const bool& value);
     void PrintNode(std::ostream& output, const std::string& value);
-
+    void PrintNode(PrintContext& ctx, const Dict& value);
 
 
 }  // namespace json

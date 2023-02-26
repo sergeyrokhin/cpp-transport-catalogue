@@ -363,12 +363,10 @@ namespace json {
 
 	void PrintNode(PrintContext& ctx, const Array& value) {
 		bool not_first = false;
-		ctx.out << '\n';
 		ctx.PrintIndent();
 		ctx.out << '[' << ' ';
 		for (auto& elem : value) {
 			if (not_first) ctx.out << ", ";
-			ctx.out << '\n';
 			ctx.PrintIndent(2);
 			not_first = true;
 			visit(
@@ -377,19 +375,16 @@ namespace json {
 			PrintNode(next_context, value);
 				}, elem.GetNodeValue());
 		}
-		ctx.out << '\n';
 		ctx.PrintIndent();
 		ctx.out << "]";
 	}
 
 	void PrintNode(PrintContext& ctx, const Dict& value) {
 		bool not_first = false;
-		ctx.out << '\n';
 		ctx.PrintIndent();
 		ctx.out << '{' << ' ';
 		for (auto& elem : value) {
 			if (not_first) ctx.out << ", ";
-			ctx.out << '\n';
 			ctx.PrintIndent(2);
 			not_first = true;
 			ctx.out << '\"' << elem.first << "\": ";
@@ -399,7 +394,6 @@ namespace json {
 			PrintNode(next_context, value);
 				}, elem.second.GetNodeValue());
 		}
-		ctx.out << '\n';
 		ctx.PrintIndent();
 		ctx.out << "}";
 	}
@@ -411,7 +405,6 @@ namespace json {
 				// Внутри неё нужная функция PrintNode будет выбрана за счёт перегрузки функций.
 				auto next_context = PrintContext{ output };
 				PrintNode(next_context, value);
-				output << '\n';
 			}, doc.GetRoot().GetNodeValue());
 	}
 

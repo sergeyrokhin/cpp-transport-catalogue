@@ -5,13 +5,13 @@ namespace svg {
 	using namespace std::literals;
 
 
-	void Object::MapRenderer(const RenderContext& context) const {
+	void Object::MapRender(const RenderContext& context) const {
 		context.RenderIndent();
 
 		// Делегируем вывод тега своим подклассам
 		RenderObject(context);
 
-		context.out << '\n';
+	//	context.out << std::endl;
 	}
 
 	// ---------- Circle ------------------
@@ -135,21 +135,19 @@ namespace svg {
 		objects_ptr_.push_back(move(obj));
 	}
 
-	void Document::MapRenderer(const RenderContext& context) const {
+	void Document::MapRender(const RenderContext& context) const {
 		context.out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"sv;
-		context.out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\\n"sv;
+		context.out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n"sv;
 
 		for (auto& obj : objects_ptr_) {
 			context.out << "  "sv;
-			obj.get()->MapRenderer(context);
+			obj.get()->MapRender(context);
 		}
 		context.out << "</svg>"sv;
 	}
 
 
 	std::ostream& operator<<(std::ostream& output, StrokeLineCap line_cap) {
-		if (line_cap != StrokeLineCap::NONE)
-		{
 			switch (line_cap) {
 			case svg::StrokeLineCap::BUTT:
 				output << "butt"sv;
@@ -163,15 +161,12 @@ namespace svg {
 			default:
 				break;
 			}
-		}
 		return output;
 	}
 
 
 
 	std::ostream& operator<<(std::ostream& output, StrokeLineJoin line_join) {
-		if (line_join != StrokeLineJoin::NONE)
-		{
 			switch (line_join) {
 			case svg::StrokeLineJoin::ARCS:
 				output << "arcs"sv;
@@ -191,7 +186,6 @@ namespace svg {
 			default:
 				break;
 			}
-		}
 		return output;
 	}
 

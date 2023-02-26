@@ -220,7 +220,7 @@ namespace transport {
         std::ostringstream out;
 
         auto map_doc = BusDepotMap(depot, doc);
-        map_doc.MapRenderer(out);
+        map_doc.MapRender(out);
 
         result.insert({ string(MAP_OUT_TEXT), {out.str()}});
         return result;

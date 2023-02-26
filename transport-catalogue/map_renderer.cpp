@@ -16,22 +16,22 @@ namespace renderer {
         return std::abs(value) < EPSILON;
     }
 
-    inline const string RENDER_SETTINGS_TEXT = "render_settings"s;
-    inline const string RENDER_WIDTH_TEXT = "width"s;
-    inline const string RENDER_HEIGHT_TEXT = "height"s;
-    inline const string RENDER_PADDING_TEXT = "padding"s;
-    inline const string RENDER_STOP_RA_TEXT = "stop_radius"s;
-    inline const string RENDER_LINE_WI_TEXT = "line_width"s;
+    static constexpr string_view RENDER_SETTINGS_TEXT = "render_settings"sv;
+    static constexpr string_view  RENDER_WIDTH_TEXT = "width"sv;
+    static constexpr string_view  RENDER_HEIGHT_TEXT = "height"sv;
+    static constexpr string_view  RENDER_PADDING_TEXT = "padding"sv;
+    static constexpr string_view  RENDER_STOP_RA_TEXT = "stop_radius"sv;
+    static constexpr string_view  RENDER_LINE_WI_TEXT = "line_width"sv;
 
-    inline const string RENDER_BUS_LABEL_F_S_TEXT = "bus_label_font_size"s;
-    inline const string RENDER_BUS_LABEL_O_S_TEXT = "bus_label_offset"s;
+    static constexpr string_view  RENDER_BUS_LABEL_F_S_TEXT = "bus_label_font_size"sv;
+    static constexpr string_view  RENDER_BUS_LABEL_O_S_TEXT = "bus_label_offset"sv;
 
-    inline const string RENDER_STOP_LABEL_F_S_TEXT = "stop_label_font_size"s;
-    inline const string RENDER_STOP_LABEL_O_S_TEXT = "stop_label_offset"s;
-    inline const string RENDER_U_LAY_W_TEXT = "underlayer_width"s;
+    static constexpr string_view  RENDER_STOP_LABEL_F_S_TEXT = "stop_label_font_size"sv;
+    static constexpr string_view  RENDER_STOP_LABEL_O_S_TEXT = "stop_label_offset"sv;
+    static constexpr string_view  RENDER_U_LAY_W_TEXT = "underlayer_width"sv;
 
-    inline const string RENDER_UN_LAYER_COL_TEXT = "underlayer_color"s;
-    inline const string RENDER_PALETTE_TEXT = "color_palette"s;
+    static constexpr string_view  RENDER_UN_LAYER_COL_TEXT = "underlayer_color"sv;
+    static constexpr string_view  RENDER_PALETTE_TEXT = "color_palette"sv;
 
     svg::Color Color_Node(const json::Node& node) {
         if (node.IsString()) return  { node.AsString() };
@@ -55,32 +55,32 @@ namespace renderer {
         auto& root = doc.GetRoot().AsMap();
         if (root.count(RENDER_SETTINGS_TEXT))
         {
-            auto& property_map = root.at(RENDER_SETTINGS_TEXT).AsMap();
+            auto& property_map = (*root.find(RENDER_SETTINGS_TEXT)).second.AsMap();
 
-            if (property_map.count(RENDER_WIDTH_TEXT)) width_ = property_map.at(RENDER_WIDTH_TEXT).AsDouble();
-            if (property_map.count(RENDER_HEIGHT_TEXT)) height_ = property_map.at(RENDER_HEIGHT_TEXT).AsDouble();
-            if (property_map.count(RENDER_PADDING_TEXT)) padding_ = property_map.at(RENDER_PADDING_TEXT).AsDouble();
-            if (property_map.count(RENDER_STOP_RA_TEXT)) stop_radius_ = property_map.at(RENDER_STOP_RA_TEXT).AsDouble();
-            if (property_map.count(RENDER_LINE_WI_TEXT)) line_width_ = property_map.at(RENDER_LINE_WI_TEXT).AsDouble();
+            if (property_map.count(RENDER_WIDTH_TEXT)) width_ = (*property_map.find(RENDER_WIDTH_TEXT)).second.AsDouble();
+            if (property_map.count(RENDER_HEIGHT_TEXT)) height_ = (*property_map.find(RENDER_HEIGHT_TEXT)).second.AsDouble();
+            if (property_map.count(RENDER_PADDING_TEXT)) padding_ = (*property_map.find(RENDER_PADDING_TEXT)).second.AsDouble();
+            if (property_map.count(RENDER_STOP_RA_TEXT)) stop_radius_ = (*property_map.find(RENDER_STOP_RA_TEXT)).second.AsDouble();
+            if (property_map.count(RENDER_LINE_WI_TEXT)) line_width_ = (*property_map.find(RENDER_LINE_WI_TEXT)).second.AsDouble();
 
-            if (property_map.count(RENDER_BUS_LABEL_F_S_TEXT)) bus_label_.font_size = property_map.at(RENDER_BUS_LABEL_F_S_TEXT).AsInt();
+            if (property_map.count(RENDER_BUS_LABEL_F_S_TEXT)) bus_label_.font_size = (*property_map.find(RENDER_BUS_LABEL_F_S_TEXT)).second.AsInt();
             if (property_map.count(RENDER_BUS_LABEL_O_S_TEXT)) {
-                auto& arr = property_map.at(RENDER_BUS_LABEL_O_S_TEXT).AsArray();
+                auto& arr = (*property_map.find(RENDER_BUS_LABEL_O_S_TEXT)).second.AsArray();
                 bus_label_.offset.x = arr[0].AsDouble();
                 bus_label_.offset.y = arr[1].AsDouble();
             }
-            if (property_map.count(RENDER_STOP_LABEL_F_S_TEXT)) stop_label_.font_size = property_map.at(RENDER_STOP_LABEL_F_S_TEXT).AsInt();
+            if (property_map.count(RENDER_STOP_LABEL_F_S_TEXT)) stop_label_.font_size = (*property_map.find(RENDER_STOP_LABEL_F_S_TEXT)).second.AsInt();
             if (property_map.count(RENDER_STOP_LABEL_O_S_TEXT)) {
-                auto& arr = property_map.at(RENDER_STOP_LABEL_O_S_TEXT).AsArray();
+                auto& arr = (*property_map.find(RENDER_STOP_LABEL_O_S_TEXT)).second.AsArray();
                 stop_label_.offset.x = arr[0].AsDouble();
                 stop_label_.offset.y = arr[1].AsDouble();
             }
-            if (property_map.count(RENDER_U_LAY_W_TEXT)) underlayer_width_ = property_map.at(RENDER_U_LAY_W_TEXT).AsDouble();
+            if (property_map.count(RENDER_U_LAY_W_TEXT)) underlayer_width_ = (*property_map.find(RENDER_U_LAY_W_TEXT)).second.AsDouble();
             if (property_map.count(RENDER_UN_LAYER_COL_TEXT)) {
-                underlayer_ = Color_Node(property_map.at(RENDER_UN_LAYER_COL_TEXT));
+                underlayer_ = Color_Node((*property_map.find(RENDER_UN_LAYER_COL_TEXT)).second);
             }
             if (property_map.count(RENDER_PALETTE_TEXT)) {
-                auto& arr = property_map.at(RENDER_PALETTE_TEXT).AsArray();
+                auto& arr = (*property_map.find(RENDER_PALETTE_TEXT)).second.AsArray();
                 for (auto& el : arr)
                 {
                     palette_.push_back(Color_Node(el));

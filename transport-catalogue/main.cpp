@@ -4,7 +4,7 @@
 
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 
 int main() {
     setlocale(LC_ALL, ".UTF8");

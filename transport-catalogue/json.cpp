@@ -275,40 +275,24 @@ namespace json {
 	}
 
 	bool Node::AsBool() const {
-		try {
-			return get<bool>(value_);
-		}
-		catch (const bad_variant_access& e) {
-			throw std::logic_error("not Array"s);
-		}
+		if (holds_alternative<bool>(value_)) return get<bool>(value_);
+		throw std::logic_error("not Array"s);
 	}
 
 
 	int Node::AsInt() const {
-		try {
-			return get<int>(value_);
-		}
-		catch (const bad_variant_access& e) {
+		if (holds_alternative<int>(value_)) return get<int>(value_);
 			throw std::logic_error("not int"s);
-		}
 	}
 
 	double Node::AsDouble() const {
-		try {
-			return get<double>(value_);
-		}
-		catch (const bad_variant_access& e) {
-			return AsInt();
-		}
+		if (holds_alternative<double>(value_)) return get<double>(value_);
+		return AsInt();
 	}
 
 	const string& Node::AsString() const {
-		try {
-			return get<string>(value_);
-		}
-		catch (const bad_variant_access& e) {
-			throw std::logic_error("not string"s);
-		}
+		if (holds_alternative<string>(value_)) return get<string>(value_);
+		throw std::logic_error("not string"s);
 	}
 
 

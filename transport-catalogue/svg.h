@@ -43,7 +43,7 @@ namespace svg {
 	std::ostream& operator<< (std::ostream& out, const StrokeLineCap line_cap);
 	std::ostream& operator<< (std::ostream& out, const StrokeLineJoin line_join);
 
-	std::ostream& operator<< (std::ostream& out, const Color color);
+	std::ostream& operator<< (std::ostream& out, const Color& color);
 
 	// Объявив в заголовочном файле константу со спецификатором inline,
 	// мы сделаем так, что она будет одной на все единицы трансляции,
@@ -179,7 +179,7 @@ namespace svg {
 	 */
 	class Object {
 	public:
-		virtual void MapRender(const RenderContext& context) const;
+		virtual void Render(const RenderContext& context) const;
 
 		virtual ~Object() = default;
 
@@ -225,22 +225,22 @@ namespace svg {
 	public:
 
 		// Задаёт координаты опорной точки (атрибуты x и y)
-		Text& SetPosition(Point pos);
+		Text& SetPosition(const Point& pos);
 
 		// Задаёт смещение относительно опорной точки (атрибуты dx, dy)
-		Text& SetOffset(Point offset);
+		Text& SetOffset(const Point& offset);
 
 		// Задаёт размеры шрифта (атрибут font-size)
 		Text& SetFontSize(uint32_t size);
 
 		// Задаёт название шрифта (атрибут font-family)
-		Text& SetFontFamily(std::string font_family);
+		Text& SetFontFamily(const std::string& font_family);
 
 		// Задаёт толщину шрифта (атрибут font-weight)
-		Text& SetFontWeight(std::string font_weight);
+		Text& SetFontWeight(const std::string& font_weight);
 
 		// Задаёт текстовое содержимое объекта (отображается внутри тега text)
-		Text& SetData(std::string data);
+		Text& SetData(const std::string& data);
 
 		// Прочие данные и методы, необходимые для реализации элемента <text>
 

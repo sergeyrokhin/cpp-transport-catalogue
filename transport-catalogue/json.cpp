@@ -269,7 +269,7 @@ namespace json {
 		throw std::logic_error("not Array"s);
 	}
 
-	const Dict& Node::AsMap() const {
+	const Dict& Node::AsDict() const {
 		if (holds_alternative<Dict>(value_)) return get<Dict>(value_);
 		throw std::logic_error("not Dict"s);
 	}

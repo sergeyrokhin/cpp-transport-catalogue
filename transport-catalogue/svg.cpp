@@ -5,7 +5,7 @@ namespace svg {
 	using namespace std::literals;
 
 
-	void Object::MapRender(const RenderContext& context) const {
+	void Object::Render(const RenderContext& context) const {
 		context.RenderIndent();
 
 		// Делегируем вывод тега своим подклассам
@@ -96,13 +96,13 @@ namespace svg {
 		out << "</text>"sv;
 	}
 
-	Text& Text::SetPosition(Point pos) {
+	Text& Text::SetPosition(const Point& pos) {
 		pos_ = pos;
 		return *this;
 	}
 
 	// Задаёт смещение относительно опорной точки (атрибуты dx, dy)
-	Text& Text::SetOffset(Point offset) {
+	Text& Text::SetOffset(const Point& offset) {
 		offset_ = offset;
 		return *this;
 	}
@@ -114,19 +114,19 @@ namespace svg {
 	}
 
 	// Задаёт название шрифта (атрибут font-family)
-	Text& Text::SetFontFamily(std::string font_family) {
+	Text& Text::SetFontFamily(const std::string& font_family) {
 		font_family_ = font_family;
 		return *this;
 	}
 
 	// Задаёт толщину шрифта (атрибут font-weight)
-	Text& Text::SetFontWeight(std::string font_weight) {
+	Text& Text::SetFontWeight(const std::string& font_weight) {
 		font_weight_ = font_weight;
 		return *this;
 	}
 
 	// Задаёт текстовое содержимое объекта (отображается внутри тега text)
-	Text& Text::SetData(std::string data) {
+	Text& Text::SetData(const std::string& data) {
 		data_ = data;
 		return *this;
 	}
@@ -141,7 +141,7 @@ namespace svg {
 
 		for (auto& obj : objects_ptr_) {
 			context.out << "  "sv;
-			obj.get()->MapRender(context);
+			obj.get()->Render(context);
 		}
 		context.out << "</svg>"sv;
 	}
@@ -189,7 +189,7 @@ namespace svg {
 		return output;
 	}
 
-	std::ostream& operator<< (std::ostream& out, const Color color) {
+	std::ostream& operator<< (std::ostream& out, const Color& color) {
 		visit(ColorPrinter{ out }, color);
 		return out;
 	}

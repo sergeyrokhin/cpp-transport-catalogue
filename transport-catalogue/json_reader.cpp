@@ -136,7 +136,7 @@ namespace transport {
 
     /// ///////////////////////
 
-    void LoadBus(TransportCatalogue& depot, string_view name, json::Dict bus_json) {
+    void LoadBus(TransportCatalogue& depot, string_view name, const json::Dict& bus_json) {
         auto& new_bus = depot.GetBus(name);
         
         bool is_routing_bus = false;
@@ -160,7 +160,7 @@ namespace transport {
     static constexpr string_view LONG_TEXT = "longitude"sv;
     static constexpr string_view DISTANCE_TEXT = "road_distances"sv;
 
-    void LoadStop(TransportCatalogue& depot, string_view name, json::Dict bus_json) {
+    void LoadStop(TransportCatalogue& depot, string_view name, const json::Dict& bus_json) {
         auto& stop = depot.GetStop(name);
         if (bus_json.count(string(LAT_TEXT)) || bus_json.count(string(LONG_TEXT)))
         {
@@ -168,7 +168,7 @@ namespace transport {
         }
         if (bus_json.count(string(DISTANCE_TEXT)))
         {
-            auto& distances = bus_json.at(string(DISTANCE_TEXT)).AsMap();
+            auto& distances = bus_json.at(string(DISTANCE_TEXT)).AsDict();
             for (auto& dist  : distances)
             {
                 depot.AddDistance({ &stop, &depot.GetStop(dist.first) }, dist.second.AsInt());
@@ -190,7 +190,7 @@ namespace transport {
 
     void Load(TransportCatalogue& depot, const json::Document& doc) {
 
-        auto& root = doc.GetRoot().AsMap();
+        auto& root = doc.GetRoot().AsDict();
 
         if (root.count(string(BASE_REQUEST_TEXT)))
         {
@@ -198,7 +198,7 @@ namespace transport {
 
             for (auto& bus_depot : bus_depot_array)
             {
-                auto& bus_stop = bus_depot.AsMap();
+                auto& bus_stop = bus_depot.AsDict();
                 if ( ! bus_stop.count(string(TYPE_TEXT)))  throw json::ParsingError("Bus Depot ITEM unknown type"s);
                 if ( ! bus_stop.count(string(NAME_TEXT)))  throw json::ParsingError("Bus Depot ITEM unknown name"s);
                 auto& type_item = bus_stop.at(string(TYPE_TEXT)).AsString();
@@ -227,7 +227,7 @@ namespace transport {
     }
 
     void Report(TransportCatalogue& depot, const json::Document& doc, std::ostream& output) {
-        auto& root = doc.GetRoot().AsMap();
+        auto& root = doc.GetRoot().AsDict();
         if (root.count(string(STAT_REQUEST_TEXT)))
         {
             auto& request_array = root.at(string(STAT_REQUEST_TEXT)).AsArray();
@@ -235,21 +235,21 @@ namespace transport {
 
             for (auto& request : request_array)
             {
-                auto& request_map = request.AsMap();
+                auto& request_map = request.AsDict();
                 auto& request_item = request_map.at(string(TYPE_TEXT)).AsString();
 
                 json::Dict reply;
 
                 if (request_item == BUS_TEXT) {
-                    reply = move(ReportBus(depot, request_map.at(string(NAME_TEXT)).AsString()));
+                    reply = ReportBus(depot, request_map.at(string(NAME_TEXT)).AsString());
                 }
                 else if (request_item == STOP_TEXT)
                 {
-                    reply = move(ReportStop(depot, request_map.at(string(NAME_TEXT)).AsString()));
+                    reply = ReportStop(depot, request_map.at(string(NAME_TEXT)).AsString());
                 }
                 else if (request_item == MAP_TEXT)
                 {
-                    reply = move(ReportMap(depot, doc));
+                    reply = ReportMap(depot, doc);
                 }
                 else  throw json::ParsingError("REQUEST ITEM unknown type"s);
 

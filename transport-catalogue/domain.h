@@ -20,7 +20,7 @@ namespace transport {
 	class TransportCatalogue;
 
 	struct Stop {
-		Stop(const std::string_view name) : name_(std::string(name)), geo_({ 0, 0 }) {}
+		Stop(const std::string_view name) : name_(std::string(name)) {}
 		std::string name_;
 		geo::Coordinates geo_;
 		bool operator==(const Stop& rh) { return name_ == rh.name_; }

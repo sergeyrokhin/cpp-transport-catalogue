@@ -52,10 +52,10 @@ namespace renderer {
     }
 
     MapRenderer::MapRenderer(const json::Document& doc) {
-        auto& root = doc.GetRoot().AsMap();
+        auto& root = doc.GetRoot().AsDict();
         if (root.count(RENDER_SETTINGS_TEXT))
         {
-            auto& property_map = (*root.find(RENDER_SETTINGS_TEXT)).second.AsMap();
+            auto& property_map = (*root.find(RENDER_SETTINGS_TEXT)).second.AsDict();
 
             if (property_map.count(RENDER_WIDTH_TEXT)) width_ = (*property_map.find(RENDER_WIDTH_TEXT)).second.AsDouble();
             if (property_map.count(RENDER_HEIGHT_TEXT)) height_ = (*property_map.find(RENDER_HEIGHT_TEXT)).second.AsDouble();
@@ -88,9 +88,8 @@ namespace renderer {
             }
         }
         else {
-            std::cerr << "RENDER_SETTINGS not found\n"s;
+            throw json::ParsingError("RENDER_SETTINGS not found"s);
         }
-        //else  throw json::ParsingError("RENDER_SETTINGS not found"s);
     }
     MapRenderer::MapRenderer() :
         width_(600),

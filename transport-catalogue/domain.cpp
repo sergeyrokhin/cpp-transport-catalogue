@@ -32,9 +32,8 @@ namespace transport {
                 geo_coords.push_back(route->geo_);
             }
         }
-        const renderer::SphereProjector proj{ geo_coords.begin(), geo_coords.end(), static_cast<double>(renderer.width_),
-            static_cast<double>(renderer.height_), static_cast<double>(renderer.padding_) };
-        //auto buses = depot.GetAllBuses();
+        const renderer::SphereProjector proj{ geo_coords.begin(), geo_coords.end(), renderer.width_,
+            renderer.height_, renderer.padding_ };
 
         auto palette = renderer.palette_.begin();
 
@@ -134,8 +133,6 @@ namespace transport {
                 result.Add(text);
             }
         }
-
-
         return result;
     }
 

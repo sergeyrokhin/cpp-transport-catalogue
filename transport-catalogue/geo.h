@@ -1,13 +1,11 @@
 #pragma once
 #include <algorithm>
 
-#include "svg.h"
-
 namespace geo {
 
 	struct Coordinates {
-		double lat; // Широта
-		double lng; // Долгота
+		double lat = 0; // Широта
+		double lng = 0; // Долгота
 		bool operator==(const Coordinates& other) const {
 			return lat == other.lat && lng == other.lng;
 		}

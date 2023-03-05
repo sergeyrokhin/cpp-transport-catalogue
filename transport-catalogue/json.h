@@ -8,8 +8,6 @@
 
 namespace json {
 
-
-
     std::string_view Lstrip(std::string_view line);
     std::string_view Rstrip(std::string_view line);
 
@@ -57,7 +55,7 @@ namespace json {
         bool IsString() const { return std::holds_alternative<std::string>(value_); }
         bool IsNull() const { return std::holds_alternative<std::nullptr_t>(value_); }
         bool IsArray() const { return std::holds_alternative<Array>(value_); }
-        bool IsMap() const { return std::holds_alternative<Dict>(value_); }
+        bool IsDict() const { return std::holds_alternative<Dict>(value_); }
 
         Node(std::nullptr_t) {}
         Node() {}
@@ -72,7 +70,7 @@ namespace json {
         bool AsBool() const;
         double AsDouble() const;
         const Array& AsArray() const;
-        const Dict& AsMap() const;
+        const Dict& AsDict() const;
         const std::string& AsString() const;
         const NodeValue& GetNodeValue() const { return value_; }
         bool operator==(const Node& other) const {
@@ -101,14 +99,6 @@ namespace json {
 
     void Print(const Document& doc, std::ostream& output);
 
-    void PrintNode(std::ostream& output, const Dict& value);
-    void PrintNode(std::ostream& output, const Array& value);
-
-    void PrintNode(std::ostream& output, const std::nullptr_t&);
-    void PrintNode(std::ostream& output, const int& value);
-    void PrintNode(std::ostream& output, const double& value);
-    void PrintNode(std::ostream& output, const bool& value);
-    void PrintNode(std::ostream& output, const std::string& value);
     void PrintNode(PrintContext& ctx, const Dict& value);
 
 

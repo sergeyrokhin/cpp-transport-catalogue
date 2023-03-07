@@ -17,13 +17,14 @@ namespace json {
 		Node& Build();
 		bool Ready();
 		void ReadyToAdd();
-		Builder& Value(const Node value);
+		Builder& Value(const Node& value);
 		BuilderBeforeKey StartDict();
 		Builder& EndDict();
-		BuilderAfteKey Key(const std::string s);
+		BuilderAfteKey Key(const std::string& s);
 		BuilderArr StartArray();
 		Builder& EndArray();
-		
+		void StartArrayDict(const Node& value);
+
 	private :
 		Node root_;
 		std::vector<Node*> nodes_stack_;
@@ -35,36 +36,38 @@ namespace json {
 	class BuilderBase { 
 	public:
 		BuilderBase(Builder& builder) : builder_(builder) {}
-		BuilderAfteKey Key(const std::string s);
+
+		BuilderAfteKey Key(const std::string& s);
 		BuilderBeforeKey StartDict();
 		BuilderBase& EndDict();
 		BuilderArr StartArray();
 		BuilderBase& EndArray();
-		BuilderBase& Value(const Node value);
+		BuilderBase& Value(const Node& value);
 		Node& Build();
+		Builder& GetBuilder() const;
+	private:
 		Builder& builder_;
 	};
 
-	class BuilderBeforeKey : public BuilderBase { //РїРѕРєР° РЅРµ Р·Р°РєСЂРѕРµРј СЃР»РѕРІР°СЂСЊ
+	class BuilderBeforeKey : public BuilderBase { //пока не закроем словарь
 	public:
 		BuilderBeforeKey(Builder& builder) : BuilderBase(builder) {}
 
 		BuilderBeforeKey StartDict() = delete;
 		BuilderArr StartArray() = delete;
-		BuilderBase& EndArray() = delete;
-		BuilderBase& Value(const Node value) = delete;
+		BuilderBase EndArray() = delete;
+		BuilderBase Value(const Node& value) = delete;
 		Node& Build() = delete;
 	};
 
-	class BuilderAfteKey : public BuilderBase { //РїРѕРєР° РЅРµ Р·Р°РєСЂРѕРµРј СЃР»РѕРІР°СЂСЊ
+	class BuilderAfteKey : public BuilderBase { //пока не закроем словарь
 	public:
 		BuilderAfteKey(Builder& builder) : BuilderBase(builder) {}
 
-		BuilderBeforeKey Value(const Node value);
-
-		BuilderAfteKey Key(const std::string s) = delete;
-		BuilderBase& EndDict() = delete;
-		BuilderBase& EndArray() = delete;
+		BuilderBeforeKey Value(const Node& value);
+		BuilderAfteKey Key(const std::string& s) = delete;
+		BuilderBase EndDict() = delete;
+		BuilderBase EndArray() = delete;
 		Node& Build() = delete;
 	};
 
@@ -72,9 +75,9 @@ namespace json {
 	public:
 		BuilderArr(Builder& builder) : BuilderBase(builder) {}
 
-		BuilderAfteKey Key(const std::string s) = delete;
-		BuilderBase& EndDict() = delete;
-		BuilderArr Value(const Node value);
+		BuilderAfteKey Key(const std::string& s) = delete;
+		BuilderBase EndDict() = delete;
+		BuilderArr Value(const Node& value);
 		Node& Build() = delete;
 	};
 

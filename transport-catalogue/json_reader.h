@@ -8,11 +8,17 @@
 
 namespace transport {
 	void Load(TransportCatalogue& depot, const json::Document& doc);
-	void Report(TransportCatalogue& depot, const json::Document& doc, std::ostream& output = std::cout);
+	void Report(const TransportCatalogue& depot, const json::Document& doc, std::ostream& output = std::cout);
 	//расстояние с учетом справочной информации
 	//расстояние географическое
 
 	void ReportBusDepot(TransportCatalogue& depot, std::ostream& output = std::cout);
 	std::ostream& operator<<(std::ostream& os, const Stop& stop);
 	std::ostream& operator<<(std::ostream& os, const Bus& bus);
+
+	using namespace std::literals;
+	static constexpr std::string_view ERROR_TEXT = "error_message"sv;
+	static constexpr std::string_view NOT_FOUND_TEXT = "not found"sv;
+	static constexpr std::string_view TYPE_TEXT = "type"sv;
+	static constexpr std::string_view BUS_TEXT = "Bus"sv;
 }

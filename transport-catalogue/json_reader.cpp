@@ -7,6 +7,7 @@
 #include "transport_catalogue.h"
 #include "request_handler.h"
 #include "map_renderer.h"
+#include "transport_router.h"
 #include "domain.h"
 
 using namespace std;
@@ -28,16 +29,13 @@ namespace transport {
         return os << '\n';
     }
 
-    static constexpr string_view ERROR_TEXT = "error_message"sv;
-    static constexpr string_view NOT_FOUND_TEXT = "not found"sv;
-
     static constexpr string_view CURVATURE_TEXT = "curvature"sv;
     static constexpr string_view ROUTE_LENGTH_TEXT = "route_length"sv;
     static constexpr string_view STOP_COUNT_TEXT = "stop_count"sv;
     static constexpr string_view UNIQUE_STOP_COUNT = "unique_stop_count"sv;
     static constexpr string_view BUSES_TEXT = "buses"sv;
 
-    json::Dict ReportBus(TransportCatalogue& depot, string_view name) {
+    json::Dict ReportBus(const TransportCatalogue& depot, const string_view name) {
         json::Dict result;
         auto ptr_bus = depot.FindBus(name);
 
@@ -70,7 +68,7 @@ namespace transport {
         return result;
     }
 
-    json::Dict  ReportStop(TransportCatalogue& depot, string_view name) {
+    json::Dict  ReportStop(const TransportCatalogue& depot, const string_view name) {
         json::Dict result;
         auto ptr_stop = depot.FindStop(name);
         if (ptr_stop == nullptr)
@@ -103,7 +101,7 @@ namespace transport {
         return result;
     }
 
-    void ReportBusDepot(TransportCatalogue& depot, std::ostream& output) {
+    void ReportBusDepot(const TransportCatalogue& depot, std::ostream& output) {
 
         //output.precision(1);
         //output.setf(ios::fixed);
@@ -137,7 +135,7 @@ namespace transport {
     /// ///////////////////////
 
     void LoadBus(TransportCatalogue& depot, string_view name, const json::Dict& bus_json) {
-        auto& new_bus = depot.GetBus(name);
+        auto& new_bus = depot.GetAddBus(name);
         
         bool is_routing_bus = false;
         if (bus_json.count(string(IS_ROUT_TEXT)))
@@ -150,7 +148,7 @@ namespace transport {
             auto& stops_array = bus_json.at(string(STOPS_TEXT)).AsArray();
             for (auto& stop_node : stops_array)
             {
-                depot.AddStep(new_bus, &depot.GetStop(stop_node.AsString()));
+                depot.AddStep(new_bus, &depot.GetAddStop(stop_node.AsString()));
             }
 
         }
@@ -161,7 +159,7 @@ namespace transport {
     static constexpr string_view DISTANCE_TEXT = "road_distances"sv;
 
     void LoadStop(TransportCatalogue& depot, string_view name, const json::Dict& bus_json) {
-        auto& stop = depot.GetStop(name);
+        auto& stop = depot.GetAddStop(name);
         if (bus_json.count(string(LAT_TEXT)) || bus_json.count(string(LONG_TEXT)))
         {
             depot.SetStop(stop, bus_json.at(string(LAT_TEXT)).AsDouble(), bus_json.at(string(LONG_TEXT)).AsDouble());
@@ -171,7 +169,7 @@ namespace transport {
             auto& distances = bus_json.at(string(DISTANCE_TEXT)).AsDict();
             for (auto& dist  : distances)
             {
-                depot.AddDistance({ &stop, &depot.GetStop(dist.first) }, dist.second.AsInt());
+                depot.AddDistance({ &stop, &depot.GetAddStop(dist.first) }, dist.second.AsInt());
             }
         }
     }
@@ -179,9 +177,12 @@ namespace transport {
     static constexpr string_view BASE_REQUEST_TEXT = "base_requests"sv;
     static constexpr string_view STAT_REQUEST_TEXT = "stat_requests"sv;
     static constexpr string_view NAME_TEXT = "name"sv;
-    static constexpr string_view TYPE_TEXT = "type"sv;
-    static constexpr string_view BUS_TEXT = "Bus"sv;
     static constexpr string_view STOP_TEXT = "Stop"sv;
+    static constexpr string_view ROUTE_TEXT = "Route"sv;
+
+    static constexpr string_view FROM_TEXT = "from"sv;
+    static constexpr string_view TO_TEXT = "to"sv;
+
     static constexpr string_view MAP_TEXT = "Map"sv;
     static constexpr string_view MAP_OUT_TEXT = "map"sv;
     static constexpr string_view ID_TEXT = "id"sv;
@@ -215,7 +216,7 @@ namespace transport {
 
     }
 
-    json::Dict ReportMap(transport::TransportCatalogue& depot, const json::Document& doc) {
+    json::Dict ReportMap(const transport::TransportCatalogue& depot, const json::Document& doc) {
         json::Dict result;
         std::ostringstream out;
 
@@ -226,7 +227,7 @@ namespace transport {
         return result;
     }
 
-    void Report(TransportCatalogue& depot, const json::Document& doc, std::ostream& output) {
+    void Report(const TransportCatalogue& depot, const json::Document& doc, std::ostream& output) {
         auto& root = doc.GetRoot().AsDict();
         if (root.count(string(STAT_REQUEST_TEXT)))
         {
@@ -251,6 +252,14 @@ namespace transport {
                 {
                     reply = ReportMap(depot, doc);
                 }
+                else if (request_item == ROUTE_TEXT)
+                {
+                    reply = ReportRoute<Weight>(depot, doc,
+                        request_map.at(string(FROM_TEXT)).AsString(),
+                        request_map.at(string(TO_TEXT)).AsString()
+                        );
+                }
+
                 else  throw json::ParsingError("REQUEST ITEM unknown type"s);
 
                 reply.insert({ string(ID_REQUEST_TEXT), request_map.at(string(ID_TEXT)).AsInt() });

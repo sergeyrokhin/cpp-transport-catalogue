@@ -49,7 +49,7 @@ namespace json {
 		Builder& builder_;
 	};
 
-	class BuilderBeforeKey : public BuilderBase { //пока не закроем словарь
+	class BuilderBeforeKey : public BuilderBase { //РїРѕРєР° РЅРµ Р·Р°РєСЂРѕРµРј СЃР»РѕРІР°СЂСЊ
 	public:
 		BuilderBeforeKey(Builder& builder) : BuilderBase(builder) {}
 
@@ -60,7 +60,7 @@ namespace json {
 		Node& Build() = delete;
 	};
 
-	class BuilderAfteKey : public BuilderBase { //пока не закроем словарь
+	class BuilderAfteKey : public BuilderBase { //РїРѕРєР° РЅРµ Р·Р°РєСЂРѕРµРј СЃР»РѕРІР°СЂСЊ
 	public:
 		BuilderAfteKey(Builder& builder) : BuilderBase(builder) {}
 

@@ -31,24 +31,24 @@ namespace transport {
 	class TransportCatalogue {
 
 	public:
-		Stop* FindStop(std::string_view name);
-		Stop& GetStop(std::string_view name);
-		Stop& GetStop(std::string_view name, double latitude, double longitude);
+		Stop* FindStop(std::string_view name) const;
+		Stop& GetAddStop(std::string_view name);
+		Stop& GetAddStop(std::string_view name, double latitude, double longitude);
 		void SetStop(Stop& stop, double latitude, double longitude);
-		Bus* FindBus(std::string_view name);
-		Bus& GetBus(std::string_view name);
+		Bus* FindBus(std::string_view name) const;
+		Bus& GetAddBus(std::string_view name);
 		void AddStep(Bus& bus, std::string_view stop);
 		void AddStep(Bus& bus, Stop* stop);
-		size_t GetFixDistance(Stop_Stop stop_stop);
-		void AddDistance(const Stop_Stop stop_stop, size_t distance);
-		const BusIndex& GetBusIndex();
-		const StopIndex& GetStopIndex();
+		size_t GetFixDistance(Stop_Stop stop_stop) const;
+		void AddDistance(Stop_Stop stop_stop, size_t distance);
+		const BusIndex& GetBusIndex() const;
+		const StopIndex& GetStopIndex() const;
 		const Buses& GetAllBuses() const;
-		const Stops& GetAllStops();
-		const Distances& GetDistances();
+		const Stops& GetAllStops() const;
+		const Distances& GetDistances() const;
 
 	private:
-		std::deque<Stop> all_stops_;
+		std::deque<Stop> all_stops_; //не вектор, т.к. deque при изменении размера сохраняет размещение своих членов.
 		std::deque<Bus> all_buses_;
 		StopIndex ind_stops_;
 		BusIndex ind_buses_;

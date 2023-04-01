@@ -11,7 +11,7 @@
  //roundtrip = true - если нужно посчитать не сумму всего маршрута, а только рассояние
  //между двумя остановками. Для круговых маршрутов это будет тоже самое
  //но для некруговых, считаем и обратный маршрут
-Length DistCalculate(transport::TransportCatalogue& depot, transport::Stop_Stop stop_stop, bool roundtrip) {
+Length DistCalculate(const transport::TransportCatalogue& depot, transport::Stop_Stop stop_stop, bool roundtrip) {
 
     if (!stop_stop.first)         return { 0, 0 };
     auto g_length = ComputeDistance(stop_stop.first->geo_, stop_stop.second->geo_);

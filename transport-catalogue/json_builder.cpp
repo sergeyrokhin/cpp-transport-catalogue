@@ -36,7 +36,7 @@ namespace json {
 				arr.push_back(value);
 				nodes_stack_.push_back(&(arr.back()));
 			}
-			else { //если добавляем в словарь, то нужно еще имя
+			else { //РµСЃР»Рё РґРѕР±Р°РІР»СЏРµРј РІ СЃР»РѕРІР°СЂСЊ, С‚Рѕ РЅСѓР¶РЅРѕ РµС‰Рµ РёРјСЏ
 				if (!key_received) {
 					throw std::logic_error("the dictionary requires a key"s);
 				}
@@ -105,7 +105,7 @@ namespace json {
 				key_received = false;
 			}
 		}
-		else root_ = { value }; //это одиночный простой json
+		else root_ = { value }; //СЌС‚Рѕ РѕРґРёРЅРѕС‡РЅС‹Р№ РїСЂРѕСЃС‚РѕР№ json
 		start_ = true;
 		return *this;
 	}

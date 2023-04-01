@@ -46,4 +46,4 @@ struct Length {
     double length, g_length;
 };
 
-Length DistCalculate(transport::TransportCatalogue& depot, transport::Stop_Stop stop_stop, bool roundtrip = true);
+Length DistCalculate(const transport::TransportCatalogue& depot, transport::Stop_Stop stop_stop, bool roundtrip = true);

@@ -21,4 +21,16 @@ namespace transport {
 	static constexpr std::string_view NOT_FOUND_TEXT = "not found"sv;
 	static constexpr std::string_view TYPE_TEXT = "type"sv;
 	static constexpr std::string_view BUS_TEXT = "Bus"sv;
+
+	class RouterProperty
+	{
+	public:
+		explicit RouterProperty(const json::Document& doc);
+		double	bus_wait_time_ = 6;
+		double	bus_velocity_ = 600; //приведенное к м/мин или 36 км/ч
+
+	private:
+
+	};
+
 }

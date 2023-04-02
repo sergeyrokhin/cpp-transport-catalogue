@@ -14,46 +14,29 @@
 namespace transport {
 	using Weight = double;
 	using Graph = graph::DirectedWeightedGraph<Weight>;
-	class RouterProperty
-	{
-	public:
-		explicit RouterProperty(const json::Document& doc);
-		Weight	bus_wait_time_ = 6;
-		Weight	bus_velocity_ = 600; //приведенное к м/мин или 36 км/ч
-
-	private:
-
-	};
-
-
-	struct Vertex {
-		const Stop& stop;
-		bool on_route; // на автобусе на маршруте (off - ожидание)
-		bool operator == (const Vertex& other) const {
-			return on_route == other.on_route && &stop == &(other.stop);
-		}
-	};
-
-	struct vertex_hash {
-		std::size_t operator () (Vertex const& pair) const {
-			std::size_t h1 = std::hash<std::string>()(pair.stop.name_);
-			return h1 + (pair.on_route ? 13 : 0);
-		}
-	};
 
 	json::Dict ReportRoute(const TransportCatalogue& depot, const json::Document& doc, std::string_view from_stop, std::string_view to_stop);
 
 	struct Mileage {
-		Weight time = 0;
+		Weight duration_boarding = 0;
+		Weight duration = 0;
 		int span_count = 0;
 	};
 
-	using IndexStops = std::unordered_map<const Vertex, graph::VertexId, vertex_hash>;
-	struct StopBuildup {
-		//Stop& stop; //остановка от которой ведется накопление
-		graph::VertexId vertex_id;
-		Mileage mileage = {};
+	struct Vertex {
+		const Stop& stop;
+		bool operator == (const Vertex& other) const {
+			return &stop == &(other.stop);
+		}
 	};
+
+	struct vertex_hash {
+		std::size_t operator () (Vertex vertex) const {
+			return std::hash<std::string>()(vertex.stop.name_);
+		}
+	};
+
+	using IndexStops = std::unordered_map<const Vertex, graph::VertexId, vertex_hash>;
 
 	struct Edge {
 		graph::VertexId from;
@@ -65,95 +48,89 @@ namespace transport {
 		Edge edge;
 		Mileage mileage;
 	};
-	using EdgeIDEdgeMileage = std::map<graph::EdgeId, EdgeMileage>; //придется запоминать, т.к. решение по графу не возвращает детализацию
+	using EdgeID_EdgeMileage = std::vector<EdgeMileage>; //придется запоминать, т.к. решение по графу не возвращает детализацию
 
-	void AddEdgeInGraph(Graph& graph, EdgeIDEdgeMileage& id_edge_mileage, const EdgeMileage& edgemileage);
+	void AddEdgeInGraph(Graph& graph, EdgeID_EdgeMileage& id_edge_mileage, const EdgeMileage& edgemileage);
 
 	template <typename Weight>
 	class RouterMap {
 	public:
-		RouterMap(const TransportCatalogue& depot, const json::Document& doc);
+		RouterMap(const TransportCatalogue& depot, const RouterProperty& router_prop);
 
-		IndexStops vertexes_; //Поиск вершин по ID
-		EdgeIDEdgeMileage edge_mileage_; //подробная информация о ребрах по ID
+		IndexStops vertexes_; //Поиск ID вершин
+		EdgeID_EdgeMileage edge_mileage_; //подробная информация о ребрах по ID по поряюку
 		std::vector<Vertex> vertex_list_; //список, по поряюку их VertexID
+		RouterProperty router_prop_; //параметры для расчета времени (скорость и время ожидания)
 		graph::Router<Weight> router_;
 	};
 
+	struct StopBuildup {
+		graph::VertexId vertex_id;
+		Mileage mileage = {};
+	};
+
+	//чтоб исключить дублирование кода используется шаблонная функция
+	// т.к. прямой итератор и реверсный невозможно передавать одним параметром, 
+	//это в свою очередь требует большого количества необходимых параметров
+	//но действительно на два параметра сократил, заменив обобщающим объектом.
+	//
 	template <typename It>
-	void FillGraphRoutes(Graph& graph, EdgeIDEdgeMileage& id_edge_mileage,
-		const TransportCatalogue& depot, const IndexStops& vertexes,
-		const Bus& bus, const It first, const It last, const RouterProperty& router_prop)
+	void FillGraphRoutes(Graph& graph, RouterMap<Weight>& router_map, const TransportCatalogue& depot, 
+		const Bus& bus, const It first_stop, const It last_stop)
 	{
 		std::vector<StopBuildup> stop_buildup; //накапливаем расстояние
 		Stop* past_stop = nullptr; //будем замерять расстояние от прошлой остановки
-		size_t stop_count = distance(first, last); //чтоб отслеживать последнюю остановку
 		int number = 0;
-		for (auto stop_it = first; stop_it != last; stop_it++)
+		for (auto stop_it = first_stop; stop_it != last_stop; stop_it++)
 		{
-			graph::VertexId vertex_bus_id = vertexes.at({ *(*stop_it), true });
-			graph::VertexId vertex_stop_id = vertexes.at({ *(*stop_it), false });
+			graph::VertexId vertex_stop_id = router_map.vertexes_.at({ *(*stop_it) });
 
 			//// + сразу, чтоб проверять не последняя ли это остановка
-			if (number++ == 0)//это первая остановка
+			if (number++ != 0)//это не первая остановка
 			{
-				//if (number < stop_count) //это не последняя остановка. добавим посадку
-				//{
-				AddEdgeInGraph(graph, id_edge_mileage,
-					{ &bus, { vertex_stop_id, vertex_bus_id }, { router_prop.bus_wait_time_, 0 } }
-				); //сесть на этот автобус здесь
-			}
-			else //была предыдущая остановка
-			{
-				if (number < stop_count) //это не последняя остановка. добавим посадку
-				{
-					AddEdgeInGraph(graph, id_edge_mileage,
-						{ &bus, { vertex_stop_id, vertex_bus_id }, { router_prop.bus_wait_time_, 0 } }
-					); //сесть на этот автобус здесь
-				}
 				auto [lenght, _] = DistCalculate(depot, { past_stop, *stop_it }); // считаем расстояние от прошлой остановки
-				auto router_time = lenght / router_prop.bus_velocity_;
+				auto router_time = lenght / router_map.router_prop_.bus_velocity_;
 
 				for (auto& buildup : stop_buildup)
 				{
 					//посчитаем этот участок
 					++buildup.mileage.span_count;
-					buildup.mileage.time += router_time;
+					buildup.mileage.duration += router_time;
 
 					//приехал, вышел (с каждой предыдущей)
-					AddEdgeInGraph(graph, id_edge_mileage,
-						{ &bus, { buildup.vertex_id, vertex_stop_id }, { buildup.mileage.time, buildup.mileage.span_count } }
+					AddEdgeInGraph(graph, router_map.edge_mileage_,
+						{ &bus, { buildup.vertex_id, vertex_stop_id }, buildup.mileage }
 					);
 				}
 			}
-			stop_buildup.push_back({ vertex_bus_id });
+			stop_buildup.push_back({ { vertex_stop_id }, {router_map.router_prop_.bus_wait_time_, router_map.router_prop_.bus_wait_time_} });
 			past_stop = *stop_it; //поехали на следующую
 		}
 	}
 	
-
+	//depot - перевод депо, автобусное депо
+	//прошу разрешить оставить, чтоб не менять другие файлы
 	template <typename Weight>
-	Graph& BuildGraph(RouterMap<Weight>& router_map, const TransportCatalogue& depot, const json::Document& doc) {
-		RouterProperty router_prop(doc); //считаем скорость и время ожидания
+	Graph& BuildGraph(RouterMap<Weight>& router_map, const TransportCatalogue& depot) {
 
+		//создание вершин графа
 		auto& stops = depot.GetAllStops();
 		for (auto& stop : stops)
 		{
-			router_map.vertex_list_.push_back({ stop, false });
-			router_map.vertex_list_.push_back({ stop, true });
-			router_map.vertexes_.insert({ { stop, false }, router_map.vertexes_.size() }); //стоит на остановке
-			router_map.vertexes_.insert({ { stop, true }, router_map.vertexes_.size() }); //готов переместиться по маршруту на "стоит на остановке"
+			router_map.vertex_list_.push_back({stop});
+			router_map.vertexes_.insert({ {stop}, router_map.vertexes_.size() });
 		}
 		static Graph graph(router_map.vertexes_.size()); //по количеству вершин
 
+		//создание рёбер графа
 		auto& buses = depot.GetAllBuses();
 		for (auto& bus : buses)
 		{
-			FillGraphRoutes(graph, router_map.edge_mileage_, depot, router_map.vertexes_, bus, bus.bus_route_.begin(), bus.bus_route_.end(), router_prop);
+			FillGraphRoutes(graph, router_map, depot, bus, bus.bus_route_.begin(), bus.bus_route_.end());
 
 			if (!bus.roundtrip_) //не круговой, будет двигаться в обратную сторону
 			{
-				FillGraphRoutes(graph, router_map.edge_mileage_, depot, router_map.vertexes_, bus, bus.bus_route_.rbegin(), bus.bus_route_.rend(), router_prop);
+				FillGraphRoutes(graph, router_map, depot, bus, bus.bus_route_.rbegin(), bus.bus_route_.rend());
 			}
 		}
 
@@ -161,23 +138,23 @@ namespace transport {
 	}
 
 	template <typename Weight>
-	RouterMap<Weight>::RouterMap(const TransportCatalogue& depot, const json::Document& doc) :
-		vertexes_(), edge_mileage_(), vertex_list_(), router_(BuildGraph(*this, depot, doc))
+	RouterMap<Weight>::RouterMap(const TransportCatalogue& depot, const RouterProperty& router_prop) :
+		vertexes_(), edge_mileage_(), vertex_list_(), router_prop_(router_prop), router_(BuildGraph(*this, depot))
 	{
 
 	}
 
 
 	template <typename Weight>
-	json::Dict ReportRoute(const TransportCatalogue& depot, const json::Document& doc, std::string_view from_stop, std::string_view to_stop) {
+	json::Dict ReportRoute(const TransportCatalogue& depot, const RouterProperty& router_prop, std::string_view from_stop, std::string_view to_stop) {
 		json::Dict result;
 
 		using namespace std;
 
-		static RouterMap<Weight> router_map(depot, doc);
+		static RouterMap<Weight> router_map(depot, router_prop);
 
-		auto router_info = router_map.router_.BuildRoute(router_map.vertexes_.at({ *depot.FindStop(from_stop), false }),
-			router_map.vertexes_.at({ *depot.FindStop(to_stop), false }));
+		auto router_info = router_map.router_.BuildRoute(router_map.vertexes_.at({ *depot.FindStop(from_stop) }),
+														 router_map.vertexes_.at({ *depot.FindStop(to_stop) }));
 		//посчитан, формируем результат
 
 		static constexpr string_view BUS__TEXT = "bus"sv;
@@ -204,24 +181,18 @@ namespace transport {
 				auto& edge = router_map.edge_mileage_.at(edge_id);
 				auto& vertex_from = router_map.vertex_list_[edge.edge.from];
 
-				if (vertex_from.on_route)
-				{
-					span.insert({ string(TYPE_TEXT), string(BUS_TEXT) });
-					span.insert({ string(BUS__TEXT), edge.bus->name_ });
-					span.insert({ string(TIME_TEXT), edge.mileage.time });
-					span.insert({ string(SPAN_COUNT_TEXT), edge.mileage.span_count });
-					spans_result.push_back(move(span));
-					span.clear();
+				span.insert({ string(TYPE_TEXT), string(WAIT_TEXT) });
+				span.insert({ string(TIME_TEXT), edge.mileage.duration_boarding });
+				span.insert({ string(STOP_NAME_TEXT), vertex_from.stop.name_ });
+				spans_result.push_back(move(span));
+				span.clear();
 
-				}
-				else //это посадка на автобус
-				{
-					span.insert({ string(TYPE_TEXT), string(WAIT_TEXT) });
-					span.insert({ string(TIME_TEXT), edge.mileage.time });
-					span.insert({ string(STOP_NAME_TEXT), vertex_from.stop.name_ });
-					spans_result.push_back(move(span));
-					span.clear();
-				}
+				span.insert({ string(TYPE_TEXT), string(BUS_TEXT) });
+				span.insert({ string(BUS__TEXT), edge.bus->name_ });
+				span.insert({ string(TIME_TEXT), edge.mileage.duration - edge.mileage.duration_boarding });
+				span.insert({ string(SPAN_COUNT_TEXT), edge.mileage.span_count });
+				spans_result.push_back(move(span));
+				span.clear();
 
 			}
 			result.insert({ string(ITEMS_TEXT), move(spans_result) });

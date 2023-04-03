@@ -5,7 +5,6 @@
 #include "request_handler.h"
 #include "graph.h"
 #include "router.h"
-#include "json_reader.h"
 
 #include <string_view>
 #include <unordered_map>
@@ -13,11 +12,20 @@
 
 namespace transport {
 	using Weight = double;
+
+	class RouterProperty
+	{
+	public:
+		explicit RouterProperty(const json::Document& doc);
+		double	bus_wait_time_ = 6;
+		double	bus_velocity_ = 600; //приведенное к м/мин или 36 км/ч
+	};
+
 	using Graph = graph::DirectedWeightedGraph<Weight>;
 
 	struct Mileage {
-		Weight duration_boarding = 0;
-		Weight duration = 0;
+		double duration_boarding = 0;
+		double duration = 0;
 		int span_count = 0;
 	};
 
@@ -53,12 +61,15 @@ namespace transport {
 	template <typename Weight>
 	class RouterMap {
 	public:
-		RouterMap(const TransportCatalogue& catalogue, const RouterProperty& router_prop);
+		RouterMap(const TransportCatalogue& catalogue, const RouterProperty& router_property) :
+			catalogue_(catalogue), vertexes_(), edge_mileage_(), vertex_list_(), router_property_(router_property), router_(BuildGraph(*this)) {
+		}
 
+		const TransportCatalogue& catalogue_;
 		IndexStops vertexes_; //Поиск ID вершин
 		EdgeID_EdgeMileage edge_mileage_; //подробная информация о ребрах по ID по поряюку
 		std::vector<Vertex> vertex_list_; //список, по поряюку их VertexID
-		RouterProperty router_property_; //параметры для расчета времени (скорость и время ожидания)
+		const RouterProperty router_property_; //параметры для расчета времени (скорость и время ожидания)
 		graph::Router<Weight> router_;
 	};
 
@@ -67,14 +78,8 @@ namespace transport {
 		Mileage mileage = {};
 	};
 
-	//чтоб исключить дублирование кода используется шаблонная функция
-	// т.к. прямой итератор и реверсный невозможно передавать одним параметром, 
-	//это в свою очередь требует большого количества необходимых параметров
-	//но действительно на два параметра сократил, заменив обобщающим объектом.
-	//
 	template <typename It>
-	void FillGraphRoutes(Graph& graph, RouterMap<Weight>& router_map, const TransportCatalogue& catalogue, 
-		const Bus& bus, const It first_stop, const It last_stop)
+	void FillGraphRoutes(Graph& graph, RouterMap<Weight>& router_map, const Bus& bus, const It first_stop, const It last_stop)
 	{
 		std::vector<StopBuildup> stop_buildup; //накапливаем расстояние
 		Stop* past_stop = nullptr; //будем замерять расстояние от прошлой остановки
@@ -86,7 +91,7 @@ namespace transport {
 			//// + сразу, чтоб проверять не последняя ли это остановка
 			if (number++ != 0)//это не первая остановка
 			{
-				auto [lenght, _] = DistCalculate(catalogue, { past_stop, *stop_it }); // считаем расстояние от прошлой остановки
+				auto [lenght, _] = DistCalculate(router_map.catalogue_, { past_stop, *stop_it }); // считаем расстояние от прошлой остановки
 				auto router_time = lenght / router_map.router_property_.bus_velocity_;
 
 				for (auto& buildup : stop_buildup)
@@ -106,13 +111,11 @@ namespace transport {
 		}
 	}
 	
-	//catalogue - перевод депо, автобусное депо
-	//прошу разрешить оставить, чтоб не менять другие файлы
 	template <typename Weight>
-	Graph& BuildGraph(RouterMap<Weight>& router_map, const TransportCatalogue& catalogue) {
+	Graph& BuildGraph(RouterMap<Weight>& router_map) {
 
 		//создание вершин графа
-		auto& stops = catalogue.GetAllStops();
+		auto& stops = router_map.catalogue_.GetAllStops();
 		for (auto& stop : stops)
 		{
 			router_map.vertex_list_.push_back({stop});
@@ -121,82 +124,18 @@ namespace transport {
 		static Graph graph(router_map.vertexes_.size()); //по количеству вершин
 
 		//создание рёбер графа
-		auto& buses = catalogue.GetAllBuses();
+		auto& buses = router_map.catalogue_.GetAllBuses();
 		for (auto& bus : buses)
 		{
-			FillGraphRoutes(graph, router_map, catalogue, bus, bus.bus_route_.begin(), bus.bus_route_.end());
+			FillGraphRoutes(graph, router_map, bus, bus.bus_route_.begin(), bus.bus_route_.end());
 
 			if (!bus.roundtrip_) //не круговой, будет двигаться в обратную сторону
 			{
-				FillGraphRoutes(graph, router_map, catalogue, bus, bus.bus_route_.rbegin(), bus.bus_route_.rend());
+				FillGraphRoutes(graph, router_map, bus, bus.bus_route_.rbegin(), bus.bus_route_.rend());
 			}
 		}
 
 		return graph;
 	}
-
-	template <typename Weight>
-	RouterMap<Weight>::RouterMap(const TransportCatalogue& catalogue, const RouterProperty& router_prop) :
-		vertexes_(), edge_mileage_(), vertex_list_(), router_property_(router_prop), router_(BuildGraph(*this, catalogue))
-	{
-
-	}
-
-
-	template <typename Weight>
-	json::Dict ReportRoute(const TransportCatalogue& catalogue, const RouterProperty& router_property, std::string_view from_stop, std::string_view to_stop) {
-		json::Dict result;
-
-		using namespace std;
-
-		static RouterMap<Weight> router_map(catalogue, router_property);
-
-		auto router_info = router_map.router_.BuildRoute(router_map.vertexes_.at({ *catalogue.FindStop(from_stop) }),
-														 router_map.vertexes_.at({ *catalogue.FindStop(to_stop) }));
-		//посчитан, формируем результат
-
-		static constexpr string_view BUS__TEXT = "bus"sv;
-		static constexpr string_view SPAN_COUNT_TEXT = "span_count"sv;
-		static constexpr string_view TOTAL_TIME_TEXT = "total_time"sv;
-		static constexpr string_view TIME_TEXT = "time"sv;
-		static constexpr string_view WAIT_TEXT = "Wait"sv;
-		static constexpr string_view ITEMS_TEXT = "items"sv;
-		static constexpr string_view STOP_NAME_TEXT = "stop_name"sv;
-
-
-		if (router_info == nullopt)
-		{
-			result.insert({ string(ERROR_TEXT), string(NOT_FOUND_TEXT) });
-		}
-		else
-		{
-			result.insert({ string(TOTAL_TIME_TEXT), router_info.value().weight });
-			auto& edges = router_info.value().edges;
-			json::Array spans_result;
-			json::Dict span;
-			for (const auto& edge_id : edges)
-			{
-				auto& edge = router_map.edge_mileage_.at(edge_id);
-				auto& vertex_from = router_map.vertex_list_[edge.edge.from];
-
-				span.insert({ string(TYPE_TEXT), string(WAIT_TEXT) });
-				span.insert({ string(TIME_TEXT), edge.mileage.duration_boarding });
-				span.insert({ string(STOP_NAME_TEXT), vertex_from.stop.name_ });
-				spans_result.push_back(move(span));
-				span.clear();
-
-				span.insert({ string(TYPE_TEXT), string(BUS_TEXT) });
-				span.insert({ string(BUS__TEXT), edge.bus->name_ });
-				span.insert({ string(TIME_TEXT), edge.mileage.duration - edge.mileage.duration_boarding });
-				span.insert({ string(SPAN_COUNT_TEXT), edge.mileage.span_count });
-				spans_result.push_back(move(span));
-				span.clear();
-
-			}
-			result.insert({ string(ITEMS_TEXT), move(spans_result) });
-		}
-		return result;
-	}
-
 
 } //namespace transport

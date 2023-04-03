@@ -14,6 +14,7 @@ using namespace std;
 
 namespace transport {
 
+    //using Weight = double;
     ostream& operator<<(ostream& os, const Stop_Stop& stop_stop) {
         return os << "Stop: " << stop_stop.first->name_ << " to Stop: " << stop_stop.second->name_;
     }

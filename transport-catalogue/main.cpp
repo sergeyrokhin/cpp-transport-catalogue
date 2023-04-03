@@ -45,7 +45,7 @@ void TestJsonBuilding() {
 
 ifstream OpenInputFile(const string& file_name) {
     ifstream in(file_name);
-    string filename = "\\json\\" + file_name;
+    string filename = file_name;
     if (!(in))
     {
         cout << "Error open input file: " << filename << " \n"s;
@@ -68,14 +68,14 @@ ofstream OpenOutputFile(const string& file_name) {
 int main() {
 
 
-    transport::TransportCatalogue depot;
+    transport::TransportCatalogue catalogue;
 
 #ifdef DEBUG
 
     setlocale(LC_ALL, ".UTF8");
     setlocale(LC_NUMERIC, "us_US.UTF-8");
 
-    const string file_name = "input"s;
+    const string file_name = "input4"s;
 
     ifstream in = OpenInputFile(file_name + ".json");
     if (!(in)) return 0;
@@ -84,17 +84,16 @@ int main() {
     if (!(out)) return 0;
 
     json::Document creature = json::Load(in);
-    transport::Load(depot, creature);
-    transport::Report(depot, creature, out);
-
-    {
+        transport::Load(catalogue, creature);
+        transport::Report(catalogue, creature, out);
+    if(false){
         ofstream out = OpenOutputFile(file_name + ".svg");
         if (!(out)) return 0;
 
-        auto map_doc = transport::BusDepotMap(depot, creature);
+        auto map_doc = transport::CatalogueMap(catalogue, creature);
         map_doc.MapRender(out);
     }
-    //transport::ReportBusDepot(depot, cout);
+    //transport::ReportBuscatalogue(catalogue, cout);
 
 
 #else
@@ -102,12 +101,12 @@ int main() {
     ostream& out = cout;
 
     json::Document creature = json::Load(in);
-    transport::Load(depot, creature);
-    transport::Report(depot, creature, out);
+    transport::Load(catalogue, creature);
+    transport::Report(catalogue, creature, out);
 #endif // DEBUG
 
 #ifdef DEBUG
-    //    transport::ReportBusDepot(depot, cout);
+    //    transport::ReportBuscatalogue(catalogue, cout);
 #endif // DEBUG
 
     return 0;

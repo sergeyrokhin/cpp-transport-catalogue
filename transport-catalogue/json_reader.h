@@ -7,12 +7,12 @@
  */
 
 namespace transport {
-	void Load(TransportCatalogue& depot, const json::Document& doc);
-	void Report(const TransportCatalogue& depot, const json::Document& doc, std::ostream& output = std::cout);
+	void Load(TransportCatalogue& catalogue, const json::Document& doc);
+	void Report(const TransportCatalogue& catalogue, const json::Document& doc, std::ostream& output = std::cout);
 	//расстояние с учетом справочной информации
 	//расстояние географическое
 
-	void ReportBusDepot(TransportCatalogue& depot, std::ostream& output = std::cout);
+	void ReportBuscatalogue(TransportCatalogue& catalogue, std::ostream& output = std::cout);
 	std::ostream& operator<<(std::ostream& os, const Stop& stop);
 	std::ostream& operator<<(std::ostream& os, const Bus& bus);
 

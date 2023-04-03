@@ -15,8 +15,6 @@ namespace transport {
 	using Weight = double;
 	using Graph = graph::DirectedWeightedGraph<Weight>;
 
-	json::Dict ReportRoute(const TransportCatalogue& depot, const json::Document& doc, std::string_view from_stop, std::string_view to_stop);
-
 	struct Mileage {
 		Weight duration_boarding = 0;
 		Weight duration = 0;
@@ -55,12 +53,12 @@ namespace transport {
 	template <typename Weight>
 	class RouterMap {
 	public:
-		RouterMap(const TransportCatalogue& depot, const RouterProperty& router_prop);
+		RouterMap(const TransportCatalogue& catalogue, const RouterProperty& router_prop);
 
 		IndexStops vertexes_; //Поиск ID вершин
 		EdgeID_EdgeMileage edge_mileage_; //подробная информация о ребрах по ID по поряюку
 		std::vector<Vertex> vertex_list_; //список, по поряюку их VertexID
-		RouterProperty router_prop_; //параметры для расчета времени (скорость и время ожидания)
+		RouterProperty router_property_; //параметры для расчета времени (скорость и время ожидания)
 		graph::Router<Weight> router_;
 	};
 
@@ -75,7 +73,7 @@ namespace transport {
 	//но действительно на два параметра сократил, заменив обобщающим объектом.
 	//
 	template <typename It>
-	void FillGraphRoutes(Graph& graph, RouterMap<Weight>& router_map, const TransportCatalogue& depot, 
+	void FillGraphRoutes(Graph& graph, RouterMap<Weight>& router_map, const TransportCatalogue& catalogue, 
 		const Bus& bus, const It first_stop, const It last_stop)
 	{
 		std::vector<StopBuildup> stop_buildup; //накапливаем расстояние
@@ -88,8 +86,8 @@ namespace transport {
 			//// + сразу, чтоб проверять не последняя ли это остановка
 			if (number++ != 0)//это не первая остановка
 			{
-				auto [lenght, _] = DistCalculate(depot, { past_stop, *stop_it }); // считаем расстояние от прошлой остановки
-				auto router_time = lenght / router_map.router_prop_.bus_velocity_;
+				auto [lenght, _] = DistCalculate(catalogue, { past_stop, *stop_it }); // считаем расстояние от прошлой остановки
+				auto router_time = lenght / router_map.router_property_.bus_velocity_;
 
 				for (auto& buildup : stop_buildup)
 				{
@@ -103,18 +101,18 @@ namespace transport {
 					);
 				}
 			}
-			stop_buildup.push_back({ { vertex_stop_id }, {router_map.router_prop_.bus_wait_time_, router_map.router_prop_.bus_wait_time_} });
+			stop_buildup.push_back({ { vertex_stop_id }, {router_map.router_property_.bus_wait_time_, router_map.router_property_.bus_wait_time_} });
 			past_stop = *stop_it; //поехали на следующую
 		}
 	}
 	
-	//depot - перевод депо, автобусное депо
+	//catalogue - перевод депо, автобусное депо
 	//прошу разрешить оставить, чтоб не менять другие файлы
 	template <typename Weight>
-	Graph& BuildGraph(RouterMap<Weight>& router_map, const TransportCatalogue& depot) {
+	Graph& BuildGraph(RouterMap<Weight>& router_map, const TransportCatalogue& catalogue) {
 
 		//создание вершин графа
-		auto& stops = depot.GetAllStops();
+		auto& stops = catalogue.GetAllStops();
 		for (auto& stop : stops)
 		{
 			router_map.vertex_list_.push_back({stop});
@@ -123,14 +121,14 @@ namespace transport {
 		static Graph graph(router_map.vertexes_.size()); //по количеству вершин
 
 		//создание рёбер графа
-		auto& buses = depot.GetAllBuses();
+		auto& buses = catalogue.GetAllBuses();
 		for (auto& bus : buses)
 		{
-			FillGraphRoutes(graph, router_map, depot, bus, bus.bus_route_.begin(), bus.bus_route_.end());
+			FillGraphRoutes(graph, router_map, catalogue, bus, bus.bus_route_.begin(), bus.bus_route_.end());
 
 			if (!bus.roundtrip_) //не круговой, будет двигаться в обратную сторону
 			{
-				FillGraphRoutes(graph, router_map, depot, bus, bus.bus_route_.rbegin(), bus.bus_route_.rend());
+				FillGraphRoutes(graph, router_map, catalogue, bus, bus.bus_route_.rbegin(), bus.bus_route_.rend());
 			}
 		}
 
@@ -138,23 +136,23 @@ namespace transport {
 	}
 
 	template <typename Weight>
-	RouterMap<Weight>::RouterMap(const TransportCatalogue& depot, const RouterProperty& router_prop) :
-		vertexes_(), edge_mileage_(), vertex_list_(), router_prop_(router_prop), router_(BuildGraph(*this, depot))
+	RouterMap<Weight>::RouterMap(const TransportCatalogue& catalogue, const RouterProperty& router_prop) :
+		vertexes_(), edge_mileage_(), vertex_list_(), router_property_(router_prop), router_(BuildGraph(*this, catalogue))
 	{
 
 	}
 
 
 	template <typename Weight>
-	json::Dict ReportRoute(const TransportCatalogue& depot, const RouterProperty& router_prop, std::string_view from_stop, std::string_view to_stop) {
+	json::Dict ReportRoute(const TransportCatalogue& catalogue, const RouterProperty& router_property, std::string_view from_stop, std::string_view to_stop) {
 		json::Dict result;
 
 		using namespace std;
 
-		static RouterMap<Weight> router_map(depot, router_prop);
+		static RouterMap<Weight> router_map(catalogue, router_property);
 
-		auto router_info = router_map.router_.BuildRoute(router_map.vertexes_.at({ *depot.FindStop(from_stop) }),
-														 router_map.vertexes_.at({ *depot.FindStop(to_stop) }));
+		auto router_info = router_map.router_.BuildRoute(router_map.vertexes_.at({ *catalogue.FindStop(from_stop) }),
+														 router_map.vertexes_.at({ *catalogue.FindStop(to_stop) }));
 		//посчитан, формируем результат
 
 		static constexpr string_view BUS__TEXT = "bus"sv;

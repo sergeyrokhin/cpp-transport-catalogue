@@ -19,10 +19,10 @@ using namespace std;
 
 namespace transport {
 
-    svg::Document BusDepotMap(const TransportCatalogue& depot, const renderer::MapRenderer& renderer) {
+    svg::Document CatalogueMap(const TransportCatalogue& catalogue, const renderer::MapRenderer& renderer) {
         svg::Document result;
         vector<geo::Coordinates> geo_coords;
-        const auto& buses = depot.GetAllBuses();
+        const auto& buses = catalogue.GetAllBuses();
         for (auto& bus : buses)
         {
             for (auto& route : bus.bus_route_)

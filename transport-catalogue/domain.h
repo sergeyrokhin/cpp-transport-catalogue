@@ -34,7 +34,7 @@ namespace transport {
 		bool operator==(const Bus& rh) { return name_ == rh.name_; }
 	};
 
-	svg::Document BusDepotMap(const TransportCatalogue& depot, const renderer::MapRenderer& renderer);
+	svg::Document CatalogueMap(const TransportCatalogue& catalogue, const renderer::MapRenderer& renderer);
 	svg::Text GetTextTemplateBus(const renderer::MapRenderer& renderer, bool underlayer = false);
 
 } // namespace transport

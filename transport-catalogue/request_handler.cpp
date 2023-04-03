@@ -11,16 +11,16 @@
  //roundtrip = true - если нужно посчитать не сумму всего маршрута, а только рассояние
  //между двумя остановками. Для круговых маршрутов это будет тоже самое
  //но для некруговых, считаем и обратный маршрут
-Length DistCalculate(const transport::TransportCatalogue& depot, transport::Stop_Stop stop_stop, bool roundtrip) {
+Length DistCalculate(const transport::TransportCatalogue& catalogue, transport::Stop_Stop stop_stop, bool roundtrip) {
 
     if (!stop_stop.first)         return { 0, 0 };
     auto g_length = ComputeDistance(stop_stop.first->geo_, stop_stop.second->geo_);
-    auto length_l = depot.GetFixDistance(stop_stop);
+    auto length_l = catalogue.GetFixDistance(stop_stop);
     double length = length_l ? length_l : g_length; //усли не определена фиксированна, то берем гео
 
     if (!roundtrip)
     {
-        auto length_l = depot.GetFixDistance({ stop_stop.second, stop_stop.first });
+        auto length_l = catalogue.GetFixDistance({ stop_stop.second, stop_stop.first });
         length += length_l ? length_l : length;
         g_length *= 2;
     }
@@ -33,5 +33,5 @@ RequestHandler::RequestHandler(const transport::TransportCatalogue& db, const re
 
 svg::Document RequestHandler::RenderMap() const
 {
-    return transport::BusDepotMap(db_, renderer_);
+    return transport::CatalogueMap(db_, renderer_);
 }

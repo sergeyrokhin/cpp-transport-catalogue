@@ -13,14 +13,6 @@
 namespace transport {
 	using Weight = double;
 
-	class RouterProperty
-	{
-	public:
-		explicit RouterProperty(const json::Document& doc);
-		double	bus_wait_time_ = 6;
-		double	bus_velocity_ = 600; //приведенное к м/мин или 36 км/ч
-	};
-
 	using Graph = graph::DirectedWeightedGraph<Weight>;
 
 	struct Mileage {
@@ -61,15 +53,14 @@ namespace transport {
 	template <typename Weight>
 	class RouterMap {
 	public:
-		RouterMap(const TransportCatalogue& catalogue, const RouterProperty& router_property) :
-			catalogue_(catalogue), vertexes_(), edge_mileage_(), vertex_list_(), router_property_(router_property), router_(BuildGraph(*this)) {
+		RouterMap(const TransportCatalogue& catalogue) :
+			catalogue_(catalogue), vertexes_(), edge_mileage_(), vertex_list_(), router_(BuildGraph(*this)) {
 		}
 
 		const TransportCatalogue& catalogue_;
 		IndexStops vertexes_; //Поиск ID вершин
 		EdgeID_EdgeMileage edge_mileage_; //подробная информация о ребрах по ID по поряюку
 		std::vector<Vertex> vertex_list_; //список, по поряюку их VertexID
-		const RouterProperty router_property_; //параметры для расчета времени (скорость и время ожидания)
 		graph::Router<Weight> router_;
 	};
 
@@ -92,7 +83,7 @@ namespace transport {
 			if (number++ != 0)//это не первая остановка
 			{
 				auto [lenght, _] = DistCalculate(router_map.catalogue_, { past_stop, *stop_it }); // считаем расстояние от прошлой остановки
-				auto router_time = lenght / router_map.router_property_.bus_velocity_;
+				auto router_time = lenght / router_map.catalogue_.GetBusVelocity();
 
 				for (auto& buildup : stop_buildup)
 				{
@@ -106,7 +97,7 @@ namespace transport {
 					);
 				}
 			}
-			stop_buildup.push_back({ { vertex_stop_id }, {router_map.router_property_.bus_wait_time_, router_map.router_property_.bus_wait_time_} });
+			stop_buildup.push_back({ { vertex_stop_id }, {router_map.catalogue_.GetBusWaitTime(), router_map.catalogue_.GetBusWaitTime()} });
 			past_stop = *stop_it; //поехали на следующую
 		}
 	}

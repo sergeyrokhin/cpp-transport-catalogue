@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <sstream>
 
+#include "serialization.h"
 #include "json_reader.h"
 #include "transport_catalogue.h"
 #include "request_handler.h"
@@ -189,6 +190,10 @@ namespace transport {
     static constexpr string_view ID_TEXT = "id"sv;
     static constexpr string_view ID_REQUEST_TEXT = "request_id"sv;
 
+    static constexpr string_view ROUTER_SETTINGS_TEXT = "routing_settings"sv;
+    static constexpr string_view BUS_VELOCITY_TEXT = "bus_velocity"sv;
+    static constexpr string_view BUS_WAIT_TIME_TEXT = "bus_wait_time"sv;
+    static constexpr double KM_H_TO_METR_MIN_CONVERTER = 1000. / 60;
 
     void Load(TransportCatalogue& catalogue, const json::Document& doc) {
 
@@ -213,22 +218,27 @@ namespace transport {
                     throw json::ParsingError("Bus catalogue ITEM unknown type"s);
             }
         }
-        else std::cerr << "Buscatalogue is empty";
 
+        if (root.count(ROUTER_SETTINGS_TEXT)) {
+            auto& property_router = (*root.find(ROUTER_SETTINGS_TEXT)).second.AsDict();
+            if (property_router.count(BUS_WAIT_TIME_TEXT)) catalogue.SetBusWaitTime((*property_router.find(BUS_WAIT_TIME_TEXT)).second.AsInt());
+            if (property_router.count(BUS_VELOCITY_TEXT))  catalogue.SetBusVelocity((*property_router.find(BUS_VELOCITY_TEXT)).second.AsDouble()
+                                                                                            * KM_H_TO_METR_MIN_CONVERTER);
+        }
     }
 
-    json::Dict ReportMap(const transport::TransportCatalogue& catalogue, const json::Document& doc) {
+    json::Dict ReportMap(const transport::TransportCatalogue& catalogue, const renderer::MapRenderer& renderer) {
         json::Dict result;
         std::ostringstream out;
 
-        auto map_doc = CatalogueMap(catalogue, doc);
+        auto map_doc = CatalogueMap(catalogue, renderer);
         map_doc.MapRender(out);
 
         result.insert({ string(MAP_OUT_TEXT), {out.str()}});
         return result;
     }
 
-    void Report(const TransportCatalogue& catalogue, const json::Document& doc, std::ostream& output) {
+    void Report(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const json::Document& doc, std::ostream& output) {
         auto& root = doc.GetRoot().AsDict();
         if (root.count(string(STAT_REQUEST_TEXT)))
         {
@@ -251,12 +261,11 @@ namespace transport {
                 }
                 else if (request_item == MAP_TEXT)
                 {
-                    reply = ReportMap(catalogue, doc);
+                    reply = ReportMap(catalogue, map_renderer);
                 }
                 else if (request_item == ROUTE_TEXT)
                 {
-                    static RouterProperty router_property(doc); //считаем скорость и время ожидания
-                    reply = ReportRoute<Weight>(catalogue, router_property,
+                    reply = ReportRoute<Weight>(catalogue,
                         request_map.at(string(FROM_TEXT)).AsString(),
                         request_map.at(string(TO_TEXT)).AsString()
                         );
@@ -270,24 +279,33 @@ namespace transport {
             json::Print(json::Document(reply_array), output);
         }
     }
+ 
+    static constexpr string_view SERIALIZATION_SETTINGS_TEXT = "serialization_settings"sv;
+    static constexpr string_view FILE_TEXT = "file"sv;
 
-    static constexpr string_view ROUTER_SETTINGS_TEXT = "routing_settings"sv;
-    static constexpr string_view BUS_VELOCITY_TEXT = "bus_velocity"sv;
-    static constexpr string_view BUS_WAIT_TIME_TEXT = "bus_wait_time"sv;
-    static constexpr double KM_H_TO_METR_MIN_CONVERTER = 1000. / 60;
-
-    RouterProperty::RouterProperty(const json::Document& doc) {
+    string GetFileName(const json::Document& doc) {
         auto& root = doc.GetRoot().AsDict();
-        if (root.count(ROUTER_SETTINGS_TEXT)) {
-            auto& property_router = (*root.find(ROUTER_SETTINGS_TEXT)).second.AsDict();
-            if (property_router.count(BUS_WAIT_TIME_TEXT)) bus_wait_time_ = (*property_router.find(BUS_WAIT_TIME_TEXT)).second.AsInt();
-            if (property_router.count(BUS_VELOCITY_TEXT))  bus_velocity_ = (*property_router.find(BUS_VELOCITY_TEXT)).second.AsDouble()
-                * KM_H_TO_METR_MIN_CONVERTER;
+        if (root.count(SERIALIZATION_SETTINGS_TEXT)) {
+            auto& serialization_settings = (*root.find(SERIALIZATION_SETTINGS_TEXT)).second.AsDict();
+            if (serialization_settings.count(string(FILE_TEXT)))
+            {
+                return serialization_settings.at(string(FILE_TEXT)).AsString();
+            }
+            else {
+                throw json::ParsingError("SERIALIZATION_SETTINGS_TEXT not found"s);
+            }
         }
         else {
-            throw json::ParsingError("ROUTER_SETTINGS_TEXT not found"s);
+            throw json::ParsingError("SERIALIZATION_SETTINGS_TEXT not found"s);
         }
-
     }
 
+    void SaveTo(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const json::Document& doc)
+    {
+        catalogue.SaveTo(map_renderer, GetFileName(doc));
+    }
+    void LoadFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, const json::Document& doc)
+    {
+        DeserializeFrom(catalogue, map_renderer, GetFileName(doc));
+    }
 }

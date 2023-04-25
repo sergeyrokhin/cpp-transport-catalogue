@@ -1,47 +1,12 @@
 #include "json_builder.h"
-#include <iostream>
-#include <fstream>
-
 #include "json_reader.h"
 
+#include <fstream>
+#include <iostream>
+#include <string_view>
+
+using namespace std::literals;
 using namespace std;
-
-//#define DEBUG
-
-void TestJsonBuilding() {
-    json::Print(
-        json::Document{
-            json::Builder{}
-            .StartDict()
-                .Key("key1"s).Value(123)
-                .Key("key2"s).Value("value2"s)
-                .Key("key3"s).StartArray()
-                    .Value(456)
-                    .StartDict().EndDict()
-                    .StartDict()
-                        .Key(""s)
-                        .Value(nullptr)
-                    .EndDict()
-                    .Value(""s)
-                .EndArray()
-            .EndDict()
-            .Build()
-        },
-        cout
-    );
-    cout << endl;
-
-    json::Print(
-        json::Document{
-            json::Builder{}
-            .Value("just a string"s)
-            .Build()
-        },
-        cout
-    );
-    cout << endl;
-}
-
 
 ifstream OpenInputFile(const string& file_name) {
     ifstream in(file_name);
@@ -55,8 +20,7 @@ ifstream OpenInputFile(const string& file_name) {
 
 ofstream OpenOutputFile(const string& file_name) {
     ofstream out(file_name);
-    // "\\json\\" +
-    string filename =  file_name + ".json";
+    string filename = file_name + ".json";
     if (!(out))
     {
         cout << "Error open output file: " << filename << " \n"s;
@@ -65,17 +29,46 @@ ofstream OpenOutputFile(const string& file_name) {
 }
 
 
-int main() {
+void PrintUsage(std::ostream& stream = std::cerr) {
+    stream << "Usage: transport_catalogue [make_base|process_requests]\n"sv;
+}
 
-
+void MakeBase(istream& in, ostream& out) {
     transport::TransportCatalogue catalogue;
+    json::Document creature = json::Load(in);
+    renderer::MapRenderer map_renderer(creature);
+    transport::Load(catalogue, creature);
+    transport::SaveTo(catalogue, map_renderer, creature);
+    transport::Report(catalogue, map_renderer, creature, out);
+}
+
+void ProcessRequests(istream& in, ostream& out) {
+    transport::TransportCatalogue catalogue;
+    json::Document creature = json::Load(in);
+    renderer::MapRenderer map_renderer;
+    transport::LoadFrom(catalogue, map_renderer, creature);
+    transport::Report(catalogue, map_renderer, creature, out);
+}
+
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        PrintUsage();
+        return 1;
+    }
+
+    const std::string_view mode(argv[1]);
+
+
+////////
+//#define DEBUG
 
 #ifdef DEBUG
 
     setlocale(LC_ALL, ".UTF8");
     setlocale(LC_NUMERIC, "us_US.UTF-8");
-
-    const string file_name = "input4"s;
+    //const string file_name = "process_requests"s;
+    const string file_name(mode);
 
     ifstream in = OpenInputFile(file_name + ".json");
     if (!(in)) return 0;
@@ -83,31 +76,22 @@ int main() {
     ofstream out = OpenOutputFile(file_name + "_out.json");
     if (!(out)) return 0;
 
-    json::Document creature = json::Load(in);
-        transport::Load(catalogue, creature);
-        transport::Report(catalogue, creature, out);
-    if(false){
-        ofstream out = OpenOutputFile(file_name + ".svg");
-        if (!(out)) return 0;
-
-        auto map_doc = transport::CatalogueMap(catalogue, creature);
-        map_doc.MapRender(out);
-    }
-    //transport::ReportBuscatalogue(catalogue, cout);
-
-
 #else
     istream& in = cin;
     ostream& out = cout;
 
-    json::Document creature = json::Load(in);
-    transport::Load(catalogue, creature);
-    transport::Report(catalogue, creature, out);
 #endif // DEBUG
 
-#ifdef DEBUG
-    //    transport::ReportBuscatalogue(catalogue, cout);
-#endif // DEBUG
+    if (mode == "make_base"sv) {
 
-    return 0;
+        MakeBase(in, out);
+
+    } else if (mode == "process_requests"sv) {
+
+        ProcessRequests(in, out);
+
+    } else {
+        PrintUsage();
+        return 1;
+    }
 }

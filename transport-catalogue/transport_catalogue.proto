@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package  transport_catalogue_serialize;
+
+message Stop {
+	string name = 1;
+	double lat = 2; // ������
+	double lng = 3; // �������
+}
+
+message Bus {
+	string name = 1;
+	repeated string bus_route = 2;
+	bool roundtrip  = 3;
+}
+
+message Distance {
+	string Stop1 = 1;
+	string Stop2 = 2;
+	uint64 distance = 3;
+}
+
+message TransportCatalogue {
+	repeated Stop all_stops = 1;
+	repeated Bus all_buses = 2;
+	repeated  Distance all_distances = 3;
+	double	bus_wait_time_ = 4;
+	double	bus_velocity_ = 5;
+}
+
+message FontSet {
+	uint64 font_size = 1;
+	double x = 2;
+	double y = 3;
+}
+
+message Rgb {
+	uint32 red = 1;
+	uint32 green = 2;
+	uint32 blue = 3;
+}
+
+message Rgba {
+	uint32 red = 1;
+	uint32 green = 2;
+	uint32 blue = 3;
+	double opacity = 4;
+}
+
+message Color {
+	uint32 variant = 1;
+	string c_strinr = 2;
+	Rgb c_rgb = 3;
+	Rgba c_rgba = 4;
+}
+
+message MapRenderer {
+        double width_ = 1;
+		double height_ = 2;
+        double padding_ = 3;
+        double stop_radius_ = 4;
+		double line_width_ = 5;
+        FontSet bus_label_ = 6;
+        FontSet stop_label_ = 7;
+        Color underlayer_ = 8;
+        double underlayer_width_ =  9;
+        repeated Color palette_ = 10;
+}
+
+message CataloguePack {
+	TransportCatalogue catalogue = 1;
+	MapRenderer renderer = 2;
+}

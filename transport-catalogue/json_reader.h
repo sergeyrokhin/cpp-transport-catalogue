@@ -9,7 +9,10 @@
 
 namespace transport {
 	void Load(TransportCatalogue& catalogue, const json::Document& doc);
-	void Report(const TransportCatalogue& catalogue, const json::Document& doc, std::ostream& output = std::cout);
+	void Report(const TransportCatalogue& catalogue, const renderer::MapRenderer& renderer, const json::Document& doc, std::ostream& output = std::cout);
+    void SaveTo(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const json::Document& doc);
+    void LoadFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, const json::Document& doc);
+
 	//расстояние с учетом справочной информации
 	//расстояние географическое
 
@@ -25,12 +28,12 @@ namespace transport {
 
 
     template <typename Weight>
-    json::Dict ReportRoute(const TransportCatalogue& catalogue, const RouterProperty& router_property, std::string_view from_stop, std::string_view to_stop) {
+    json::Dict ReportRoute(const TransportCatalogue& catalogue, std::string_view from_stop, std::string_view to_stop) {
         json::Dict result;
 
         using namespace std;
 
-        static RouterMap<Weight> router_map(catalogue, router_property);
+        static RouterMap<Weight> router_map(catalogue);
 
         auto router_info = router_map.router_.BuildRoute(router_map.vertexes_.at({ *catalogue.FindStop(from_stop) }),
             router_map.vertexes_.at({ *catalogue.FindStop(to_stop) }));

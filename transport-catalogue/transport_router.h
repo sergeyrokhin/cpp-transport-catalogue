@@ -1,10 +1,10 @@
 #pragma once
 
 #include "json.h"
-#include "transport_catalogue.h"
-#include "request_handler.h"
 #include "graph.h"
 #include "router.h"
+#include "domain.h"
+#include "transport_router.h"
 
 #include <string_view>
 #include <unordered_map>
@@ -12,6 +12,7 @@
 
 namespace transport {
 	using Weight = double;
+	using Stop_Stop = std::pair<Stop*, Stop*>;
 
 	using Graph = graph::DirectedWeightedGraph<Weight>;
 
@@ -50,17 +51,30 @@ namespace transport {
 
 	void AddEdgeInGraph(Graph& graph, EdgeID_EdgeMileage& id_edge_mileage, const EdgeMileage& edgemileage);
 
+	class RouterSetting {
+	public:
+		RouterSetting() = default;
+		RouterSetting(const RouterSetting& other);
+		RouterSetting(const json::Document& doc);
+		double	bus_wait_time_ = 6;
+		double	bus_velocity_ = 600; //приведенное к м/мин или 36 км/ч
+	};
+
 	template <typename Weight>
 	class RouterMap {
 	public:
-		RouterMap(const TransportCatalogue& catalogue) :
-			catalogue_(catalogue), vertexes_(), edge_mileage_(), vertex_list_(), router_(BuildGraph(*this)) {
+		RouterMap(const TransportCatalogue& catalogue, const RouterSetting& router_settings) : //
+			catalogue_(catalogue), vertexes_(), edge_mileage_(), vertex_list_(), 
+					router_settings_(router_settings), 
+					router_(BuildGraph(*this))
+		{
 		}
 
 		const TransportCatalogue& catalogue_;
 		IndexStops vertexes_; //Поиск ID вершин
 		EdgeID_EdgeMileage edge_mileage_; //подробная информация о ребрах по ID по поряюку
 		std::vector<Vertex> vertex_list_; //список, по поряюку их VertexID
+		const RouterSetting& router_settings_;
 		graph::Router<Weight> router_;
 	};
 
@@ -68,6 +82,12 @@ namespace transport {
 		graph::VertexId vertex_id;
 		Mileage mileage = {};
 	};
+
+	struct Length {
+		double length, g_length;
+	};
+
+	Length DistCalculate(const transport::TransportCatalogue& catalogue, transport::Stop_Stop stop_stop, bool roundtrip = true);
 
 	template <typename It>
 	void FillGraphRoutes(Graph& graph, RouterMap<Weight>& router_map, const Bus& bus, const It first_stop, const It last_stop)
@@ -83,7 +103,7 @@ namespace transport {
 			if (number++ != 0)//это не первая остановка
 			{
 				auto [lenght, _] = DistCalculate(router_map.catalogue_, { past_stop, *stop_it }); // считаем расстояние от прошлой остановки
-				auto router_time = lenght / router_map.catalogue_.GetBusVelocity();
+				auto router_time = lenght / router_map.router_settings_.bus_velocity_;
 
 				for (auto& buildup : stop_buildup)
 				{
@@ -97,7 +117,7 @@ namespace transport {
 					);
 				}
 			}
-			stop_buildup.push_back({ { vertex_stop_id }, {router_map.catalogue_.GetBusWaitTime(), router_map.catalogue_.GetBusWaitTime()} });
+			stop_buildup.push_back({ { vertex_stop_id }, {router_map.router_settings_.bus_wait_time_, router_map.router_settings_.bus_wait_time_} });
 			past_stop = *stop_it; //поехали на следующую
 		}
 	}

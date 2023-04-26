@@ -6,9 +6,12 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Protobuf REQUIRED)
 find_package(Threads REQUIRED)
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS transport_catalogue.proto)
+#set(CMAKE_C_FLAGS_DEBUG "/MTd /Z7 /Od")
 
-set(TRANSPORT_CATALOQUE_PROTO_FILES transport_catalogue.proto)
+set(TRANSPORT_CATALOQUE_PROTO_FILES transport_catalogue.proto map_renderer.proto transport_router.proto svg.proto graph.proto)
+
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${TRANSPORT_CATALOQUE_PROTO_FILES})
+
 set(TRANSPORT_CATALOQUE_H_FILES domain.h geo.h graph.h json.h json_builder.h json_reader.h map_renderer.h ranges.h request_handler.h router.h serialization.h svg.h transport_catalogue.h transport_router.h)
 set(TRANSPORT_CATALOQUE_CPP_FILES domain.cpp geo.cpp json.cpp json_builder.cpp json_reader.cpp main.cpp map_renderer.cpp request_handler.cpp serialization.cpp svg.cpp transport_catalogue.cpp transport_router.cpp)
 

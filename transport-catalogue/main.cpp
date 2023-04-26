@@ -8,6 +8,8 @@
 using namespace std::literals;
 using namespace std;
 
+//#define DEBUG
+
 ifstream OpenInputFile(const string& file_name) {
     ifstream in(file_name);
     string filename = file_name;
@@ -37,17 +39,30 @@ void MakeBase(istream& in, ostream& out) {
     transport::TransportCatalogue catalogue;
     json::Document creature = json::Load(in);
     renderer::MapRenderer map_renderer(creature);
+    transport::RouterSetting router_settings(creature);
     transport::Load(catalogue, creature);
-    transport::SaveTo(catalogue, map_renderer, creature);
-    transport::Report(catalogue, map_renderer, creature, out);
+    transport::SaveTo(catalogue, map_renderer, router_settings, creature);
+    transport::Report(catalogue, map_renderer, router_settings, creature, out);
+#ifdef DEBUG
+    {
+        ifstream in = OpenInputFile("process_requests.json");
+        transport::TransportCatalogue catalogue2;
+        json::Document creature2 = json::Load(in);
+        transport::RouterSetting router_settings2;
+        renderer::MapRenderer map_renderer2;
+        transport::LoadFrom(catalogue2, map_renderer2, router_settings2, creature2);
+        transport::Report(catalogue2, map_renderer2, router_settings2, creature2, out);
+    }
+#endif // DEBUG
 }
 
 void ProcessRequests(istream& in, ostream& out) {
     transport::TransportCatalogue catalogue;
     json::Document creature = json::Load(in);
     renderer::MapRenderer map_renderer;
-    transport::LoadFrom(catalogue, map_renderer, creature);
-    transport::Report(catalogue, map_renderer, creature, out);
+    transport::RouterSetting router_settings;
+    transport::LoadFrom(catalogue, map_renderer, router_settings, creature);
+    transport::Report(catalogue, map_renderer, router_settings, creature, out);
 }
 
 
@@ -61,8 +76,6 @@ int main(int argc, char* argv[]) {
 
 
 ////////
-//#define DEBUG
-
 #ifdef DEBUG
 
     setlocale(LC_ALL, ".UTF8");

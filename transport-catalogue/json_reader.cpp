@@ -5,9 +5,7 @@
 
 #include "serialization.h"
 #include "json_reader.h"
-#include "transport_catalogue.h"
 #include "request_handler.h"
-#include "map_renderer.h"
 #include "transport_router.h"
 #include "domain.h"
 
@@ -190,11 +188,6 @@ namespace transport {
     static constexpr string_view ID_TEXT = "id"sv;
     static constexpr string_view ID_REQUEST_TEXT = "request_id"sv;
 
-    static constexpr string_view ROUTER_SETTINGS_TEXT = "routing_settings"sv;
-    static constexpr string_view BUS_VELOCITY_TEXT = "bus_velocity"sv;
-    static constexpr string_view BUS_WAIT_TIME_TEXT = "bus_wait_time"sv;
-    static constexpr double KM_H_TO_METR_MIN_CONVERTER = 1000. / 60;
-
     void Load(TransportCatalogue& catalogue, const json::Document& doc) {
 
         auto& root = doc.GetRoot().AsDict();
@@ -218,13 +211,6 @@ namespace transport {
                     throw json::ParsingError("Bus catalogue ITEM unknown type"s);
             }
         }
-
-        if (root.count(ROUTER_SETTINGS_TEXT)) {
-            auto& property_router = (*root.find(ROUTER_SETTINGS_TEXT)).second.AsDict();
-            if (property_router.count(BUS_WAIT_TIME_TEXT)) catalogue.SetBusWaitTime((*property_router.find(BUS_WAIT_TIME_TEXT)).second.AsInt());
-            if (property_router.count(BUS_VELOCITY_TEXT))  catalogue.SetBusVelocity((*property_router.find(BUS_VELOCITY_TEXT)).second.AsDouble()
-                                                                                            * KM_H_TO_METR_MIN_CONVERTER);
-        }
     }
 
     json::Dict ReportMap(const transport::TransportCatalogue& catalogue, const renderer::MapRenderer& renderer) {
@@ -238,7 +224,7 @@ namespace transport {
         return result;
     }
 
-    void Report(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const json::Document& doc, std::ostream& output) {
+    void Report(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const  RouterSetting& router_settings, const json::Document& doc, std::ostream& output) {
         auto& root = doc.GetRoot().AsDict();
         if (root.count(string(STAT_REQUEST_TEXT)))
         {
@@ -265,7 +251,7 @@ namespace transport {
                 }
                 else if (request_item == ROUTE_TEXT)
                 {
-                    reply = ReportRoute<Weight>(catalogue,
+                    reply = ReportRoute<Weight>(catalogue, router_settings,
                         request_map.at(string(FROM_TEXT)).AsString(),
                         request_map.at(string(TO_TEXT)).AsString()
                         );
@@ -300,12 +286,12 @@ namespace transport {
         }
     }
 
-    void SaveTo(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const json::Document& doc)
+    void SaveTo(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const RouterSetting& router_settings, const json::Document& doc)
     {
-        catalogue.SaveTo(map_renderer, GetFileName(doc));
+        catalogue.SaveTo(map_renderer, router_settings, GetFileName(doc));
     }
-    void LoadFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, const json::Document& doc)
+    void LoadFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, RouterSetting& router_settings, const json::Document& doc)
     {
-        DeserializeFrom(catalogue, map_renderer, GetFileName(doc));
+        DeserializeFrom(catalogue, map_renderer, router_settings, GetFileName(doc));
     }
 }

@@ -45,27 +45,6 @@ namespace transport {
     const Buses& TransportCatalogue::GetAllBuses() const { return all_buses_; }
     const Stops& TransportCatalogue::GetAllStops() const { return all_stops_; }
     const Distances& TransportCatalogue::GetDistances() const { return all_distances_; }
-
-    double TransportCatalogue::GetBusWaitTime() const
-    {
-        return bus_wait_time_;
-    }
-
-    double TransportCatalogue::GetBusVelocity() const
-    {
-        return bus_velocity_;
-    }
-
-    void TransportCatalogue::SetBusWaitTime(double bus_wait_time)
-    {
-        bus_wait_time_ = bus_wait_time;
-    }
-
-    void TransportCatalogue::SetBusVelocity(double bus_velocity)
-    {
-        bus_velocity_ = bus_velocity;
-    }
-
     //********* Bus
     Bus* TransportCatalogue::FindBus(const std::string_view name) const {
         auto it = ind_buses_.find(name);

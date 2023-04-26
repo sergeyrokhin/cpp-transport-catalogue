@@ -8,6 +8,7 @@
 
 #include "geo.h"
 #include "domain.h"
+#include "transport_router.h"
 #include "transport_catalogue.pb.h"
 
 namespace transport {
@@ -26,11 +27,9 @@ namespace transport {
 	using Stops = std::deque<Stop>;
 	using Buses = std::deque<Bus>;
 	using Stop_Stop = std::pair<Stop*, Stop*>;
-
 	using Distances = std::unordered_map<Stop_Stop, size_t, pair_hash>;
 
 	class TransportCatalogue {
-
 	public:
 		Stop* FindStop(std::string_view name) const;
 		Stop& GetAddStop(std::string_view name);
@@ -47,11 +46,7 @@ namespace transport {
 		const Buses& GetAllBuses() const;
 		const Stops& GetAllStops() const;
 		const Distances& GetDistances() const;
-		double GetBusWaitTime() const;
-		double GetBusVelocity() const;
-		void SetBusWaitTime(double bus_wait_time) ;
-		void SetBusVelocity(double bus_velocity);
-		void SaveTo(const renderer::MapRenderer& map_renderer, const std::string& file_name) const;
+		void SaveTo(const renderer::MapRenderer& map_renderer, const RouterSetting& router_settings, const std::string& file_name) const;
 		void Serialize(transport_catalogue_serialize::TransportCatalogue& s_cataloque) const;
 	private:
 		std::deque<Stop> all_stops_; //не вектор, т.к. deque при изменении размера сохраняет размещение своих членов.
@@ -59,8 +54,5 @@ namespace transport {
 		StopIndex ind_stops_;
 		BusIndex ind_buses_;
 		Distances all_distances_;
-		double	bus_wait_time_ = 6;
-		double	bus_velocity_ = 600; //приведенное к м/мин или 36 км/ч
 	};
-
 }

@@ -6,5 +6,5 @@
 
 namespace transport
 {
-	void DeserializeFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, const std::string& file_name);
+	void DeserializeFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, RouterSetting& router_settings, const std::string& file_name);
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "json.h"
 #include "transport_catalogue.h"
-#include "transport_router.h"
+#include "router.h"
 /*
  * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
  * а также код обработки запросов к базе и формирование массива ответов в формате JSON
@@ -9,9 +9,9 @@
 
 namespace transport {
 	void Load(TransportCatalogue& catalogue, const json::Document& doc);
-	void Report(const TransportCatalogue& catalogue, const renderer::MapRenderer& renderer, const json::Document& doc, std::ostream& output = std::cout);
-    void SaveTo(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const json::Document& doc);
-    void LoadFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, const json::Document& doc);
+	void Report(const TransportCatalogue& catalogue, const renderer::MapRenderer& renderer, const  RouterSetting& router_settings, const json::Document& doc, std::ostream& output = std::cout);
+    void SaveTo(const TransportCatalogue& catalogue, const renderer::MapRenderer& map_renderer, const RouterSetting& router_settings, const json::Document& doc);
+    void LoadFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, RouterSetting& router_settings, const json::Document& doc);
 
 	//расстояние с учетом справочной информации
 	//расстояние географическое
@@ -28,12 +28,12 @@ namespace transport {
 
 
     template <typename Weight>
-    json::Dict ReportRoute(const TransportCatalogue& catalogue, std::string_view from_stop, std::string_view to_stop) {
+    json::Dict ReportRoute(const TransportCatalogue& catalogue, const  RouterSetting& router_setting,  std::string_view from_stop, std::string_view to_stop) {
         json::Dict result;
 
         using namespace std;
 
-        static RouterMap<Weight> router_map(catalogue);
+        static RouterMap<Weight> router_map(catalogue, router_setting);
 
         auto router_info = router_map.router_.BuildRoute(router_map.vertexes_.at({ *catalogue.FindStop(from_stop) }),
             router_map.vertexes_.at({ *catalogue.FindStop(to_stop) }));

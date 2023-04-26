@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package  transport_router_serialize;
+
+message TransportRouter {
+	double	bus_wait_time_ = 4;
+	double	bus_velocity_ = 5;
+}

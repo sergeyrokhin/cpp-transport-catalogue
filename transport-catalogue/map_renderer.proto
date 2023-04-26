@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package  map_renderer_serialize;
+
+import  "svg.proto";
+
+message MapRenderer {
+        double width_ = 1;
+		double height_ = 2;
+        double padding_ = 3;
+        double stop_radius_ = 4;
+		double line_width_ = 5;
+        svg_serialize.FontSet bus_label_ = 6;
+        svg_serialize.FontSet stop_label_ = 7;
+        svg_serialize.Color underlayer_ = 8;
+        double underlayer_width_ =  9;
+        repeated svg_serialize.Color palette_ = 10;
+}

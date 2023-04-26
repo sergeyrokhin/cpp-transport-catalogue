@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package  svg_serialize;
+
+message FontSet {
+	uint64 font_size = 1;
+	double x = 2;
+	double y = 3;
+}
+
+message Rgb {
+	uint32 red = 1;
+	uint32 green = 2;
+	uint32 blue = 3;
+}
+
+message Rgba {
+	uint32 red = 1;
+	uint32 green = 2;
+	uint32 blue = 3;
+	double opacity = 4;
+}
+
+message Color {
+	uint32 variant = 1;
+	string c_strinr = 2;
+	Rgb c_rgb = 3;
+	Rgba c_rgba = 4;
+}

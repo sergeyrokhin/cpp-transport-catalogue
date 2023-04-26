@@ -1,5 +1,6 @@
 #include "transport_catalogue.h"
 #include "transport_catalogue.pb.h"
+#include "transport_router.h"
 #include "serialization.h"
 
 #include <fstream>
@@ -8,17 +9,20 @@
 using namespace std;
 namespace transport {
 
-	enum class ColorVariant { monostate = 1, string = 2, Rgb = 3, Rgba = 4 };
+	enum class ColorVariant {	monostate = 1, 
+								string = 2, 
+								Rgb = 3, 
+								Rgba = 4 };
 
-	transport_catalogue_serialize::FontSet CreateFontSet(const renderer::FontSet font) {
-		transport_catalogue_serialize::FontSet font_set;
+		svg_serialize::FontSet CreateFontSet(const renderer::FontSet font) {
+		svg_serialize::FontSet font_set;
 		font_set.set_font_size(font.font_size);
 		font_set.set_x(font.offset.x);
 		font_set.set_y(font.offset.y);
 		return font_set;
 	}
 
-	renderer::FontSet CreateFontSet(transport_catalogue_serialize::FontSet font) {
+	renderer::FontSet CreateFontSet(svg_serialize::FontSet font) {
 		renderer::FontSet font_set;
 
 		font_set.font_size = font.font_size();
@@ -27,8 +31,8 @@ namespace transport {
 		return font_set;
 	}
 
-	transport_catalogue_serialize::Color CreateColorSet(const svg::Color color) {
-		transport_catalogue_serialize::Color color_set;
+	svg_serialize::Color CreateColorSet(const svg::Color color) {
+		svg_serialize::Color color_set;
 		if (std::holds_alternative<monostate>(color)) {
 			color_set.set_variant((uint32_t)ColorVariant::monostate);
 		}
@@ -38,7 +42,7 @@ namespace transport {
 		}
 		else if (std::holds_alternative<svg::Rgb>(color)) {
 			color_set.set_variant((uint32_t)ColorVariant::Rgb);
-			transport_catalogue_serialize::Rgb new_color;
+			svg_serialize::Rgb new_color;
 			new_color.set_blue(get<svg::Rgb>(color).blue);
 			new_color.set_green(get<svg::Rgb>(color).green);
 			new_color.set_red(get<svg::Rgb>(color).red);
@@ -46,7 +50,7 @@ namespace transport {
 		}
 		else if (std::holds_alternative<svg::Rgba>(color)) {
 			color_set.set_variant((uint32_t)ColorVariant::Rgba);
-			transport_catalogue_serialize::Rgba new_color;
+			svg_serialize::Rgba new_color;
 			new_color.set_blue(get<svg::Rgba>(color).blue);
 			new_color.set_green(get<svg::Rgba>(color).green);
 			new_color.set_red(get<svg::Rgba>(color).red);
@@ -56,7 +60,7 @@ namespace transport {
 		return color_set;
 	}
 
-	svg::Color CreateColorSet(const transport_catalogue_serialize::Color color) {
+	svg::Color CreateColorSet(const svg_serialize::Color color) {
 		svg::Color color_set;
 		const auto variant = (ColorVariant)color.variant();
 		if (variant == ColorVariant::monostate) {
@@ -80,8 +84,6 @@ namespace transport {
 	}
 	void TransportCatalogue::Serialize(transport_catalogue_serialize::TransportCatalogue& s_cataloque) const
 	{
-		s_cataloque.set_bus_velocity_(bus_velocity_);
-		s_cataloque.set_bus_wait_time_(bus_wait_time_);
 		for (const auto& stop : all_stops_)
 		{
 			transport_catalogue_serialize::Stop& new_stop = *s_cataloque.add_all_stops();
@@ -106,7 +108,7 @@ namespace transport {
 			new_distance.set_distance(distance.second);
 		}
 	}
-	void SerializeMapRenderer(const renderer::MapRenderer& map_renderer, transport_catalogue_serialize::MapRenderer& s_map_renderer)
+	void SerializeMapRenderer(const renderer::MapRenderer& map_renderer, map_renderer_serialize::MapRenderer& s_map_renderer)
 	{
 		s_map_renderer.set_height_(map_renderer.height_);
 		s_map_renderer.set_width_(map_renderer.width_);
@@ -121,13 +123,28 @@ namespace transport {
 
 		*s_map_renderer.mutable_underlayer_() = move(CreateColorSet(map_renderer.underlayer_));
 		for (const auto& color : map_renderer.palette_) {
-			transport_catalogue_serialize::Color* new_color = s_map_renderer.add_palette_();
+			svg_serialize::Color* new_color = s_map_renderer.add_palette_();
 			*new_color = move(CreateColorSet(color));
 		}
 	}
 
-	void DeSerializeMapRenderer(renderer::MapRenderer& map_renderer, const transport_catalogue_serialize::MapRenderer& load_map_renderer)
+	void SerializeRouterSetting(const transport::RouterSetting& router_setting, transport_router_serialize::TransportRouter& s_router_setting)
 	{
+		s_router_setting.set_bus_velocity_(router_setting.bus_velocity_);
+		s_router_setting.set_bus_wait_time_(router_setting.bus_wait_time_);
+	}
+
+	transport::RouterSetting DeSerializeRouterSetting(const transport_router_serialize::TransportRouter& s_router_setting)
+	{
+		transport::RouterSetting router_setting;
+		router_setting.bus_velocity_ = s_router_setting.bus_velocity_();
+		router_setting.bus_wait_time_ = s_router_setting.bus_wait_time_();
+		return router_setting;
+	}
+
+	renderer::MapRenderer DeSerializeMapRenderer(const map_renderer_serialize::MapRenderer& load_map_renderer)
+	{
+		renderer::MapRenderer map_renderer;
 		map_renderer.height_ = load_map_renderer.height_();
 		map_renderer.width_ = load_map_renderer.width_();
 
@@ -144,22 +161,22 @@ namespace transport {
 		for (const auto& color : load_map_renderer.palette_()) {
 			map_renderer.palette_.emplace_back(move(CreateColorSet(color)));
 		}
+		return map_renderer;
 	}
 
-	void TransportCatalogue::SaveTo(const renderer::MapRenderer& map_renderer, const string& file_name) const
+	void TransportCatalogue::SaveTo(const renderer::MapRenderer& map_renderer, const RouterSetting& router_settings, const string& file_name) const
 	{
 		ofstream output(string(file_name), ios::out | ios::binary);
 
 		transport_catalogue_serialize::CataloguePack catalogue_pack;
 
 		Serialize(*catalogue_pack.mutable_catalogue());
+		SerializeRouterSetting(router_settings, *catalogue_pack.mutable_router());
 		SerializeMapRenderer(map_renderer, *catalogue_pack.mutable_renderer());
 		catalogue_pack.SerializeToOstream((ostream*)( &output));
 	}
 
 	void DeserializeCatalogue(TransportCatalogue& catalogue, const transport_catalogue_serialize::TransportCatalogue& load_catalogue) {
-		catalogue.SetBusVelocity(load_catalogue.bus_velocity_());
-		catalogue.SetBusWaitTime(load_catalogue.bus_wait_time_());
 		for (const auto& load_stop : load_catalogue.all_stops())
 		{
 			auto& stop = catalogue.GetAddStop(load_stop.name());
@@ -178,7 +195,7 @@ namespace transport {
 		}
 	}
 
-	void DeserializeFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, const string& file_name) {
+	void DeserializeFrom(TransportCatalogue& catalogue, renderer::MapRenderer& map_renderer, RouterSetting& router_settings, const string& file_name) {
 		ifstream input(file_name, ios::in | ios::binary);
 
 		transport_catalogue_serialize::CataloguePack catalogue_pack;
@@ -187,6 +204,7 @@ namespace transport {
 			return;
 		}
 		DeserializeCatalogue(catalogue, catalogue_pack.catalogue());
-		DeSerializeMapRenderer(map_renderer, catalogue_pack.renderer());
+		map_renderer = move(DeSerializeMapRenderer(catalogue_pack.renderer()));
+		router_settings = move(DeSerializeRouterSetting(catalogue_pack.router()));
 	}
 }
